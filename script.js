@@ -6,6 +6,87 @@
 
 'use strict';
 
+/* ============================================
+   FIREBASE SYNC INTERCEPTOR
+   ============================================ */
+const originalSetItem = localStorage.setItem;
+const SYNC_KEYS = ['ocio_users', 'ocio_deposits', 'ocio_withdrawals', 'ocio_wallet_addresses', 'ocio_giftcards'];
+
+localStorage.setItem = function(key, value) {
+  originalSetItem.apply(this, arguments);
+  if (SYNC_KEYS.includes(key) && window.db) {
+    if (window.syncTimeout) clearTimeout(window.syncTimeout);
+    window.syncTimeout = setTimeout(() => {
+      const dataToSync = {};
+      SYNC_KEYS.forEach(k => {
+        try { 
+          const val = localStorage.getItem(k);
+          if (val) dataToSync[k] = JSON.parse(val); 
+        } catch {}
+      });
+      window.db.collection('data').doc('ocio_state').set(dataToSync, {merge: true}).catch(console.error);
+    }, 800);
+  }
+};
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCy9blxNtc4OADQE7jKYxUZQgsldtURJoM",
+  authDomain: "ocio-financial.firebaseapp.com",
+  projectId: "ocio-financial",
+  storageBucket: "ocio-financial.firebasestorage.app",
+  messagingSenderId: "721050100199",
+  appId: "1:721050100199:web:510f97c089942427445d42",
+  measurementId: "G-BPYEW2VRJ5"
+};
+
+function loadScript(src) {
+  return new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = src;
+    s.onload = resolve;
+    s.onerror = reject;
+    document.head.appendChild(s);
+  });
+}
+
+async function initFirebase() {
+  try {
+    await loadScript("https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js");
+    await loadScript("https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js");
+    
+    firebase.initializeApp(firebaseConfig);
+    window.db = firebase.firestore();
+    
+    window.db.collection('data').doc('ocio_state').onSnapshot((doc) => {
+      if (doc.exists) {
+        const data = doc.data();
+        let changed = false;
+        SYNC_KEYS.forEach(k => {
+          if (data[k]) {
+            const remoteStr = JSON.stringify(data[k]);
+            const localStr = localStorage.getItem(k);
+            if (remoteStr !== localStr) {
+              originalSetItem.call(localStorage, k, remoteStr);
+              changed = true;
+            }
+          }
+        });
+        
+        if (changed) {
+          if (typeof renderAdminDashboard === 'function' && document.getElementById('admin-dashboard')) {
+            renderAdminDashboard();
+          } else if (document.querySelector('.dashboard-body')) {
+            window.location.reload();
+          }
+        }
+      }
+    });
+  } catch (err) {
+    console.error("Firebase init error:", err);
+  }
+}
+initFirebase();
+
 /* ---------- Config ---------- */
 const CONFIG = {
   COINGECKO_API: 'https://api.coingecko.com/api/v3',
