@@ -456,9 +456,8 @@ function initLogin() {
       // Log in existing user
       saveUser(existingUser);
     } else {
-      // Auto-create for new devices
-      const name = email.split('@')[0];
-      saveUser({ name, email, password, balance: 0 });
+      showError(errorEl, 'Invalid email or password. Please wait a moment for the database to sync, or check your internet connection.');
+      return;
     }
     
     window.location.href = 'dashboard.html';
