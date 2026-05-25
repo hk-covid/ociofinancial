@@ -177,6 +177,21 @@ function mergeTxArrays(localArr, cloudArr) {
   return Array.from(map.values());
 }
 
+/* --- Deep compare helper to detect local changes (status updates, new transactions, etc.) --- */
+function hasLocalChanges(finalVal, cloudVal) {
+  if (Array.isArray(finalVal) && Array.isArray(cloudVal)) {
+    if (finalVal.length !== cloudVal.length) return true;
+    for (let i = 0; i < finalVal.length; i++) {
+      if (JSON.stringify(finalVal[i]) !== JSON.stringify(cloudVal[i])) return true;
+    }
+    return false;
+  }
+  if (typeof finalVal === 'object' && typeof cloudVal === 'object' && finalVal !== null && cloudVal !== null) {
+    return JSON.stringify(finalVal) !== JSON.stringify(cloudVal);
+  }
+  return finalVal !== cloudVal;
+}
+
 /* --- Full sync: pull cloud data, merge with local, push merged result back --- */
 async function cloudSyncFull() {
   const cloudData = await cloudFetch();
@@ -248,16 +263,10 @@ async function cloudSyncFull() {
     const cloudVal = cloudData[k] || ((k === 'ocio_wallet_addresses') ? {} : []);
     const finalVal = finalData[k];
 
-    // Since our merge strategy only appends local-only items to the cloud master list,
-    // a length difference definitively proves we have local data that needs pushing.
-    if (Array.isArray(finalVal) && Array.isArray(cloudVal)) {
-      if (finalVal.length > cloudVal.length) {
-        needsPush = true;
-      }
-    } else if (k === 'ocio_wallet_addresses' && typeof finalVal === 'object') {
-      if (Object.keys(finalVal).length > Object.keys(cloudVal).length) {
-        needsPush = true;
-      }
+    // If there are any content changes (new items, status updates, fee updates, etc.) between
+    // local merged state and the remote cloud state, we flag that a push is required.
+    if (hasLocalChanges(finalVal, cloudVal)) {
+      needsPush = true;
     }
   });
 
