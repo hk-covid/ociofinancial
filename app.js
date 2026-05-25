@@ -208,21 +208,33 @@ async function cloudSyncFull() {
     }
   });
 
-  // Push the fully merged state back to cloud ONLY if it's different.
-  // This prevents spamming JSONBlob with PUT requests on every page load
-  // or admin dashboard poll, which caused rate-limiting failures.
+  // Push the fully merged state back to cloud ONLY if we actually merged local-only data
+  // that the cloud didn't already have. This fixes Bug A (JSON.stringify order sensitivity),
+  // Bug B (phantom PUTs on admin auto-poll), and Bug C (double-PUT after registration).
   const finalData = {};
+  let needsPush = false;
+
   SYNC_KEYS.forEach(k => {
     try { finalData[k] = JSON.parse(localStorage.getItem(k)); } catch { finalData[k] = null; }
     if (!finalData[k]) finalData[k] = (k === 'ocio_wallet_addresses') ? {} : [];
+
+    const cloudVal = cloudData[k] || ((k === 'ocio_wallet_addresses') ? {} : []);
+    const finalVal = finalData[k];
+
+    // Since our merge strategy only appends local-only items to the cloud master list,
+    // a length difference definitively proves we have local data that needs pushing.
+    if (Array.isArray(finalVal) && Array.isArray(cloudVal)) {
+      if (finalVal.length > cloudVal.length) {
+        needsPush = true;
+      }
+    } else if (k === 'ocio_wallet_addresses' && typeof finalVal === 'object') {
+      if (Object.keys(finalVal).length > Object.keys(cloudVal).length) {
+        needsPush = true;
+      }
+    }
   });
 
-  const normalizedCloudData = {};
-  SYNC_KEYS.forEach(k => {
-    normalizedCloudData[k] = cloudData[k] || ((k === 'ocio_wallet_addresses') ? {} : []);
-  });
-
-  if (JSON.stringify(finalData) !== JSON.stringify(normalizedCloudData)) {
+  if (needsPush) {
     await cloudPush(finalData);
   }
 
