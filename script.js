@@ -699,7 +699,7 @@ function initLogin() {
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     const email = document.getElementById('login-email').value.trim().toLowerCase();
-    const password = document.getElementById('login-password').value;
+    const password = document.getElementById('login-password').value.trim();
     const errorEl = document.getElementById('login-error');
     const submitBtn = form.querySelector('button[type="submit"]');
 
@@ -715,9 +715,21 @@ function initLogin() {
     // Show loading state
     if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Signing in...'; }
 
-    // STEP 1: Try a direct cloud lookup first — this is the most reliable path.
-    // It does a simple GET without any PUT, so rate-limiting cannot block login.
-    let foundUser = await cloudFetchUser(email);
+    // STEP 1: Fetch the entire cloud data object to check network status
+    let cloudData = null;
+    let networkError = false;
+    try {
+      cloudData = await cloudFetch();
+      if (!cloudData) networkError = true;
+    } catch (e) {
+      networkError = true;
+    }
+
+    let foundUser = null;
+
+    if (!networkError && cloudData && Array.isArray(cloudData.ocio_users)) {
+      foundUser = cloudData.ocio_users.find(u => u && u.email && u.email.toLowerCase() === email);
+    }
 
     // STEP 2: If cloud lookup returned the user but password is wrong, fail fast.
     if (foundUser && foundUser.password !== password) {
@@ -727,8 +739,6 @@ function initLogin() {
     }
 
     // STEP 3: If user not found in cloud, try local storage as a fallback
-    // (handles the case where the user just registered on this device and
-    // the cloud push hasn't completed yet).
     if (!foundUser) {
       const localUsers = getAllUsers();
       foundUser = localUsers.find(u => u && u.email && u.email.toLowerCase() === email);
@@ -739,10 +749,14 @@ function initLogin() {
       }
     }
 
-    // STEP 4: If still not found anywhere, show error
+    // STEP 4: If still not found anywhere, show appropriate error
     if (!foundUser) {
       if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Sign In'; }
-      showError(errorEl, 'Account not found. Please register first or check your internet connection.');
+      if (networkError) {
+         showError(errorEl, 'Cannot reach the server. Please check your internet connection or disable adblockers/VPNs.');
+      } else {
+         showError(errorEl, 'Account not found. Please double check the email or register.');
+      }
       return;
     }
 
