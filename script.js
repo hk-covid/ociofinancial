@@ -303,6 +303,30 @@ window._cloudSyncReady = cloudSyncFull().then(changed => {
   return true;
 });
 
+/*
+ * SELF-HEALING PUSH: If this device has any local users/transactions that
+ * the cloud doesn't have yet (e.g. registered before sync was fixed, or
+ * while cloud was offline), push them up on every page load.
+ * This runs AFTER the initial cloudSyncFull() resolves so it doesn't race.
+ */
+window._cloudSyncReady.then(async () => {
+  try {
+    const cloudData = await cloudFetch();
+    if (!cloudData) return;
+    const cloudUsers = Array.isArray(cloudData.ocio_users) ? cloudData.ocio_users : [];
+    const localUsers = getAllUsers();
+    // Check if local has any users not present in cloud
+    const cloudEmails = new Set(cloudUsers.map(u => u.email && u.email.toLowerCase()).filter(Boolean));
+    const localOnlyUsers = localUsers.filter(u => u && u.email && u.password && !cloudEmails.has(u.email.toLowerCase()));
+    if (localOnlyUsers.length > 0) {
+      console.log('[CloudSync] Self-heal: pushing', localOnlyUsers.length, 'local-only user(s) to cloud');
+      await cloudPushAll();
+    }
+  } catch(e) {
+    console.warn('[CloudSync] Self-heal push failed:', e);
+  }
+});
+
 // Auto-poll cloud every 10 seconds when the admin dashboard is active
 // so newly registered users and new transactions appear automatically.
 setInterval(() => {
