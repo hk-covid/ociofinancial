@@ -336,18 +336,26 @@ window._cloudSyncReady.then(async () => {
   }
 });
 
-// Auto-poll cloud every 10 seconds when the admin dashboard is active
-// so newly registered users and new transactions appear automatically.
-setInterval(() => {
-  if (document.getElementById('admin-dashboard') && document.getElementById('admin-dashboard').style.display !== 'none') {
-    cloudSyncFull().then(() => {
-      if (typeof renderAdminUsers === 'function') renderAdminUsers();
-      if (typeof renderAdminDeposits === 'function') renderAdminDeposits();
-      if (typeof renderAdminWithdrawals === 'function') renderAdminWithdrawals();
-      if (typeof renderAdminGiftcards === 'function') renderAdminGiftcards();
-    });
+// Auto-poll cloud every 15 seconds when the admin dashboard is active.
+// Guard flag prevents overlapping syncs (which would spam PUT requests
+// and trigger JSONBlob rate limiting).
+setInterval(async () => {
+  const dash = document.getElementById('admin-dashboard');
+  if (!dash || dash.style.display === 'none') return;
+  if (window._adminSyncInProgress) return;
+  window._adminSyncInProgress = true;
+  try {
+    await cloudSyncFull();
+    if (typeof renderAdminUsers === 'function') renderAdminUsers();
+    if (typeof renderAdminDeposits === 'function') renderAdminDeposits();
+    if (typeof renderAdminWithdrawals === 'function') renderAdminWithdrawals();
+    if (typeof renderAdminGiftcards === 'function') renderAdminGiftcards();
+  } catch(e) {
+    console.warn('[Admin Poll] Sync error:', e);
+  } finally {
+    window._adminSyncInProgress = false;
   }
-}, 10000);
+}, 15000);
 
 /* ---------- Config ---------- */
 const CONFIG = {
@@ -747,14 +755,21 @@ function initLogin() {
       return;
     }
 
-    // STEP 3: If user not found in cloud, try local storage as a fallback
+    // STEP 3: If user not found in cloud, try local storage as a fallback.
+    // Handles accounts whose registration push was rate-limited — they exist
+    // locally on the original device but not yet in cloud. Self-heal pushes
+    // them to cloud so other devices can log in going forward.
+    let foundUserLocalOnly = false;
     if (!foundUser) {
-      const localUsers = getAllUsers();
-      foundUser = localUsers.find(u => u && u.email && u.email.toLowerCase() === email);
+      const localFallbackUsers = getAllUsers();
+      foundUser = localFallbackUsers.find(u => u && u.email && u.email.toLowerCase() === email);
       if (foundUser && foundUser.password !== password) {
         if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Sign In'; }
         showError(errorEl, 'Invalid email or password.');
         return;
+      }
+      if (foundUser && !networkError) {
+        foundUserLocalOnly = true; // exists locally but not in cloud
       }
     }
 
@@ -783,8 +798,24 @@ function initLogin() {
     }
     originalSetItem('ocio_users', JSON.stringify(localUsers));
 
-    // Run full sync in the background to pull deposits/withdrawals etc.
-    // (non-blocking — don't await this so navigation isn't delayed)
+    if (foundUserLocalOnly) {
+      // Self-heal: push local-only account to cloud with retries in background.
+      // Does not block navigation.
+      (async () => {
+        for (let attempt = 1; attempt <= 5; attempt++) {
+          if (attempt > 1) await new Promise(r => setTimeout(r, attempt * 800));
+          const ok = await cloudPushAll();
+          if (ok) {
+            console.log('[Login] Self-heal push succeeded (attempt', attempt, ') for:', email);
+            cloudSyncFull().catch(() => {}); // clean up canonical cloud state
+            break;
+          }
+          console.warn('[Login] Self-heal push attempt', attempt, 'failed for:', email);
+        }
+      })();
+    }
+
+    // Run full sync in background to pull deposits/withdrawals/balance updates
     cloudSyncFull().catch(() => {});
 
     if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Sign In'; }
@@ -861,11 +892,23 @@ function initRegister() {
     // Show loading state
     if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Creating account...'; }
 
-    // Sync from cloud first to check for existing accounts registered on other devices
-    try { await cloudSyncFull(); } catch {}
-
-    const allUsers = getAllUsers();
-    if (allUsers.find(u => u.email.toLowerCase() === email)) {
+    // ONE EMAIL PER ACCOUNT — direct GET from cloud (never rate-limited) plus
+    // local check. This is more reliable than cloudSyncFull() which ends with
+    // a rate-limited PUT that can make the local state stale.
+    let cloudCheckUsers = [];
+    try {
+      const cloudCheck = await cloudFetch();
+      if (cloudCheck && Array.isArray(cloudCheck.ocio_users)) {
+        cloudCheckUsers = cloudCheck.ocio_users;
+      }
+    } catch {}
+    const localUsersForCheck = getAllUsers();
+    const registeredEmails = new Set([
+      ...cloudCheckUsers.map(u => u && u.email ? u.email.toLowerCase() : ''),
+      ...localUsersForCheck.map(u => u && u.email ? u.email.toLowerCase() : '')
+    ]);
+    registeredEmails.delete('');
+    if (registeredEmails.has(email)) {
       if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Create Account'; }
       showError(errorEl, 'An account with this email already exists.');
       return;
@@ -879,19 +922,35 @@ function initRegister() {
       joined: new Date().toLocaleDateString('en-US')
     };
 
-    // Add to local users list and set as active session
-    const updatedUsers = [...allUsers, newUser];
-    originalSetItem('ocio_users', JSON.stringify(updatedUsers));
+    // Merge new user into the canonical list (cloud + local) to prevent stale local state
+    const mergedForSave = mergeUsers(localUsersForCheck, cloudCheckUsers);
+    mergedForSave.push(newUser);
+    originalSetItem('ocio_users', JSON.stringify(mergedForSave));
     originalSetItem('ocio_user', JSON.stringify(newUser));
     originalSetItem('ocio_logged_in', 'true');
 
-    // Immediately push the new account to cloud so it appears on admin dashboard
-    // and is available on all devices right away
-    try {
-      await cloudPushAll();
-      console.log('[Register] New account pushed to cloud:', email);
-    } catch (err) {
-      console.warn('[Register] Cloud push failed, will retry on next sync:', err);
+    // Push with retries (up to 5) to survive JSONBlob rate limiting.
+    // A single PUT can be silently dropped; retries ensure the account
+    // reaches the cloud so it appears in the admin panel immediately.
+    let pushOk = false;
+    for (let attempt = 1; attempt <= 5; attempt++) {
+      if (attempt > 1) await new Promise(r => setTimeout(r, attempt * 600));
+      try {
+        pushOk = await cloudPushAll();
+        if (pushOk) {
+          console.log('[Register] Account pushed to cloud on attempt', attempt, ':', email);
+          break;
+        }
+      } catch (err) {
+        console.warn('[Register] Push attempt', attempt, 'threw:', err);
+      }
+    }
+    if (!pushOk) {
+      console.warn('[Register] All 5 push attempts failed for:', email,
+        '— account is local-only; login self-heal will retry on next login from this device.');
+    } else {
+      // Trigger a full sync in background to ensure canonical cloud state is clean
+      cloudSyncFull().catch(() => {});
     }
 
     window.location.href = 'dashboard.html';
@@ -1663,21 +1722,30 @@ function initAdmin() {
       // Disable button during operation
       if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Saving...'; }
 
-      // Sync first to get latest balances before modifying
-      try { await cloudSyncFull(); } catch {}
+      // Fetch latest state from cloud with a GET (no PUT, no rate-limit risk)
+      // so we apply the balance change on top of the true canonical data.
+      try {
+        const latestCloud = await cloudFetch();
+        if (latestCloud && isCloudDataValid(latestCloud)) {
+          SYNC_KEYS.forEach(k => {
+            const val = latestCloud[k];
+            if (val !== undefined) {
+              originalSetItem(k, JSON.stringify(val));
+            }
+          });
+        }
+      } catch {}
 
       const users = getAllUsers();
       const u = users.find(u => u.email === email);
       if (u) {
         u.balance = (u.balance || 0) + amount;
-        // Write directly via originalSetItem to avoid debounce delay
         originalSetItem('ocio_users', JSON.stringify(users));
 
-        // Add auto-approved transaction entry
+        // Add auto-approved deposit transaction
         let deps = [];
         try { deps = JSON.parse(localStorage.getItem('ocio_deposits')) || []; } catch {}
 
-        // Get the custom date if provided, otherwise use current date
         const customDateVal = document.getElementById('fund-date').value;
         let transDate = '';
         if (customDateVal) {
@@ -1698,12 +1766,22 @@ function initAdmin() {
         });
         originalSetItem('ocio_deposits', JSON.stringify(deps));
 
-        // Immediately push all changes to cloud so user sees updated balance instantly
-        try {
-          await cloudPushAll();
-          console.log('[Admin] Funds added and pushed to cloud for:', email);
-        } catch (err) {
-          console.warn('[Admin] Cloud push after add-funds failed:', err);
+        // Push with retries — a single PUT can be silently dropped under rate limiting
+        let fundPushOk = false;
+        for (let attempt = 1; attempt <= 4; attempt++) {
+          if (attempt > 1) await new Promise(r => setTimeout(r, attempt * 700));
+          try {
+            fundPushOk = await cloudPushAll();
+            if (fundPushOk) {
+              console.log('[Admin] Funds pushed to cloud (attempt', attempt, ') for:', email);
+              break;
+            }
+          } catch (err) {
+            console.warn('[Admin] Fund push attempt', attempt, 'failed:', err);
+          }
+        }
+        if (!fundPushOk) {
+          console.warn('[Admin] All fund push attempts failed for:', email);
         }
 
         if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Add Funds'; }
@@ -1763,7 +1841,10 @@ window.handleAdminUserFeeChange = async function(email, newFeeVal) {
     u.withdrawalFee = parseFloat(newFeeVal);
     // Use originalSetItem to avoid debounce, then push immediately
     originalSetItem('ocio_users', JSON.stringify(users));
-    try { await cloudPushAll(); } catch {}
+    for (let attempt = 1; attempt <= 4; attempt++) {
+      if (attempt > 1) await new Promise(r => setTimeout(r, attempt * 700));
+      try { if (await cloudPushAll()) break; } catch {}
+    }
   }
 };
 
@@ -1951,7 +2032,7 @@ window.handleAdminDateChange = function(index, type, newDateVal) {
     try { deps = JSON.parse(localStorage.getItem('ocio_deposits')) || []; } catch {}
     if (deps[index]) {
       deps[index].date = formattedDate;
-      localStorage.setItem('ocio_deposits', JSON.stringify(deps));
+      originalSetItem('ocio_deposits', JSON.stringify(deps));
       renderAdminDeposits();
     }
   } else if (type === 'withdraw') {
@@ -1959,10 +2040,18 @@ window.handleAdminDateChange = function(index, type, newDateVal) {
     try { wds = JSON.parse(localStorage.getItem('ocio_withdrawals')) || []; } catch {}
     if (wds[index]) {
       wds[index].date = formattedDate;
-      localStorage.setItem('ocio_withdrawals', JSON.stringify(wds));
+      originalSetItem('ocio_withdrawals', JSON.stringify(wds));
       renderAdminWithdrawals();
     }
   }
+  // Debounced push (reuses existing pattern) so rapid date edits coalesce into one PUT
+  if (window._cloudPushTimeout) clearTimeout(window._cloudPushTimeout);
+  window._cloudPushTimeout = setTimeout(async () => {
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      if (attempt > 1) await new Promise(r => setTimeout(r, attempt * 600));
+      try { if (await cloudPushAll()) break; } catch {}
+    }
+  }, 600);
 };
 
 window.handleDepositAction = async function(index, status) {
@@ -1979,8 +2068,11 @@ window.handleDepositAction = async function(index, status) {
         originalSetItem('ocio_users', JSON.stringify(users));
       }
     }
-    // Immediately push to cloud so the user sees their updated balance on any device
-    try { await cloudPushAll(); } catch {}
+    // Push with retries to survive rate limiting
+    for (let attempt = 1; attempt <= 4; attempt++) {
+      if (attempt > 1) await new Promise(r => setTimeout(r, attempt * 700));
+      try { if (await cloudPushAll()) break; } catch {}
+    }
     renderAdminDeposits();
     renderAdminUsers();
   }
@@ -2000,8 +2092,11 @@ window.handleWithdrawalAction = async function(index, status) {
         originalSetItem('ocio_users', JSON.stringify(users));
       }
     }
-    // Immediately push to cloud so the user sees their updated balance on any device
-    try { await cloudPushAll(); } catch {}
+    // Push with retries to survive rate limiting
+    for (let attempt = 1; attempt <= 4; attempt++) {
+      if (attempt > 1) await new Promise(r => setTimeout(r, attempt * 700));
+      try { if (await cloudPushAll()) break; } catch {}
+    }
     renderAdminWithdrawals();
     renderAdminUsers();
   }
