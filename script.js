@@ -13,7 +13,7 @@
 const CLOUD_BLOB_ID = '019e5d39-d397-76b8-9204-ed47ae480f3c';
 const CLOUD_API_URL = 'https://jsonblob.com/api/jsonBlob/' + CLOUD_BLOB_ID;
 const SYNC_KEYS = ['ocio_users', 'ocio_deposits', 'ocio_withdrawals', 'ocio_wallet_addresses', 'ocio_giftcards'];
-const originalSetItem = localStorage.setItem;
+const originalSetItem = localStorage.setItem.bind(localStorage);
 
 /* --- Cloud helper: GET all data from cloud --- */
 async function cloudFetch() {
@@ -49,32 +49,60 @@ async function cloudPush(data) {
 /*
  * MERGE STRATEGY — Cloud is the master source of truth.
  *
- * For users:     Cloud data always wins for balance/details.
- *                Local items not in cloud are added (new registrations on this device).
+ * IMPORTANT: Cloud data is VALIDATED before being treated as authoritative.
+ * A user entry must have both email and password to be considered valid.
+ * A cloud blob missing all keys (empty/corrupted) is ignored.
+ *
+ * For users:     Valid cloud users win for balance/details.
+ *                Local users not in cloud (new registrations) are added.
+ *                Invalid cloud users (no password) cannot overwrite valid local users.
  *                Local profile pictures are preserved if cloud doesn't have one.
  *
  * For transactions: Cloud wins. Local-only transactions (just submitted) are added.
- *                   If the same tx exists in both, cloud resolved status wins.
+ *                   Transactions have a unique `id` field for reliable deduplication.
  *
- * For wallet addresses: Cloud object wins entirely.
+ * For wallet addresses: Cloud object wins entirely if it has content.
  */
+
+/* --- Validate that cloud data is usable (not empty/corrupted) --- */
+function isCloudDataValid(cloudData) {
+  if (!cloudData || typeof cloudData !== 'object') return false;
+  // Cloud must have at least one of the expected keys
+  const hasAnyKey = SYNC_KEYS.some(k => cloudData[k] !== undefined);
+  if (!hasAnyKey) return false;
+  // If it has ocio_users, every user entry must have an email
+  if (Array.isArray(cloudData.ocio_users)) {
+    const validUsers = cloudData.ocio_users.filter(u => u && u.email);
+    if (cloudData.ocio_users.length > 0 && validUsers.length === 0) return false;
+  }
+  return true;
+}
 
 /* --- Merge users: cloud master, local fills in new registrations only --- */
 function mergeUsers(localArr, cloudArr) {
   if (!Array.isArray(localArr)) localArr = [];
   if (!Array.isArray(cloudArr)) cloudArr = [];
+
+  // Only treat cloud users with valid email+password as authoritative.
+  // This prevents a corrupted/test cloud entry (e.g. no password) from
+  // clobbering a real user who registered on this device.
+  const validCloudUsers = cloudArr.filter(u => u && u.email && u.password);
+
   const map = new Map();
-  // Start with cloud — it is authoritative for all existing users
-  cloudArr.forEach(u => map.set(u.email, u));
+  // Start with valid cloud users — they are authoritative
+  validCloudUsers.forEach(u => map.set(u.email.toLowerCase(), u));
+
   // Add any local users that don't exist in cloud yet (just registered on this device)
   localArr.forEach(u => {
-    if (!map.has(u.email)) {
-      map.set(u.email, u);
+    if (!u || !u.email) return;
+    const key = u.email.toLowerCase();
+    if (!map.has(key)) {
+      map.set(key, u); // New local user — add to merged set
     } else {
       // User exists in both — cloud wins, but preserve local profile pic if cloud lacks one
-      const cloudUser = map.get(u.email);
+      const cloudUser = map.get(key);
       if (u.profilePic && !cloudUser.profilePic) {
-        map.set(u.email, { ...cloudUser, profilePic: u.profilePic });
+        map.set(key, { ...cloudUser, profilePic: u.profilePic });
       }
       // Cloud balance and all other fields are authoritative — no local override
     }
@@ -82,17 +110,30 @@ function mergeUsers(localArr, cloudArr) {
   return Array.from(map.values());
 }
 
+/* --- Generate a unique transaction ID --- */
+function generateTxId() {
+  return Date.now().toString(36) + Math.random().toString(36).substr(2, 6);
+}
+
 /* --- Merge transactions: cloud master, local adds new pending transactions --- */
 function mergeTxArrays(localArr, cloudArr) {
   if (!Array.isArray(localArr)) localArr = [];
   if (!Array.isArray(cloudArr)) cloudArr = [];
   const map = new Map();
-  // Unique key: combines email, amount, date, method/bank to identify same transaction
-  const txKey = tx => `${tx.email}|${tx.amount}|${tx.date}|${tx.method || tx.bank || ''}`;
+
+  // Unique key: prefer dedicated `id` field; fall back to composite key for legacy entries
+  const txKey = tx => tx.id ||
+    `${tx.email}|${tx.amount}|${tx.date}|${tx.method || tx.bank || ''}`;
+
   // Cloud is master
-  cloudArr.forEach(tx => map.set(txKey(tx), tx));
+  cloudArr.forEach(tx => {
+    if (!tx || !tx.email) return;
+    map.set(txKey(tx), tx);
+  });
+
   // Add local-only transactions (just submitted on this device)
   localArr.forEach(tx => {
+    if (!tx || !tx.email) return;
     const key = txKey(tx);
     if (!map.has(key)) {
       map.set(key, tx); // New local transaction — add it
@@ -103,7 +144,7 @@ function mergeTxArrays(localArr, cloudArr) {
       if (existing.status === 'Pending' && tx.status !== 'Pending') {
         map.set(key, tx); // Local resolved, cloud still pending — prefer resolved
       }
-      // Otherwise cloud wins (already handled by cloudArr.forEach above)
+      // Otherwise cloud wins
     }
   });
   return Array.from(map.values());
@@ -112,8 +153,25 @@ function mergeTxArrays(localArr, cloudArr) {
 /* --- Full sync: pull cloud data, merge with local, push merged result back --- */
 async function cloudSyncFull() {
   const cloudData = await cloudFetch();
+
+  // If the cloud is unreachable, just use local data without pushing
   if (!cloudData) {
     console.warn('[CloudSync] Could not reach cloud, using local data only');
+    return false;
+  }
+
+  // CRITICAL: Validate cloud data before treating it as authoritative.
+  // A corrupted or partially-initialized cloud blob (e.g. missing all keys,
+  // or users without passwords) must NOT be allowed to wipe valid local data.
+  if (!isCloudDataValid(cloudData)) {
+    console.warn('[CloudSync] Cloud data failed validation — treating as empty. Will push local state.');
+    // Push local data to repair the cloud blob, then return
+    const repairData = {};
+    SYNC_KEYS.forEach(k => {
+      try { repairData[k] = JSON.parse(localStorage.getItem(k)); } catch { repairData[k] = null; }
+      if (!repairData[k]) repairData[k] = (k === 'ocio_wallet_addresses') ? {} : [];
+    });
+    await cloudPush(repairData);
     return false;
   }
 
@@ -145,21 +203,21 @@ async function cloudSyncFull() {
 
     const mergedStr = JSON.stringify(merged);
     if (mergedStr !== localStorage.getItem(key)) {
-      originalSetItem.call(localStorage, key, mergedStr);
+      originalSetItem(key, mergedStr);
       dataChanged = true;
     }
   });
 
-  // Always push the fully merged state back to cloud.
-  // This ensures new local registrations (added above) are persisted to cloud.
+  // Push the fully merged state back to cloud.
+  // This ensures new local registrations and transactions are persisted to cloud.
   const finalData = {};
   SYNC_KEYS.forEach(k => {
-    try { finalData[k] = JSON.parse(localStorage.getItem(k)); } catch { finalData[k] = []; }
+    try { finalData[k] = JSON.parse(localStorage.getItem(k)); } catch { finalData[k] = null; }
     if (!finalData[k]) finalData[k] = (k === 'ocio_wallet_addresses') ? {} : [];
   });
   await cloudPush(finalData);
 
-  // CRITICAL FIX: After every sync, refresh the logged-in user's session data
+  // After every sync, refresh the logged-in user's session data
   // from the freshly merged users list. This ensures that balance changes made
   // by the admin on another device are immediately visible to the user.
   refreshActiveUserSession();
@@ -185,7 +243,7 @@ function refreshActiveUserSession() {
     if (!sessionUser || !sessionUser.email) return;
 
     const allUsers = JSON.parse(localStorage.getItem('ocio_users')) || [];
-    const freshUser = allUsers.find(u => u.email === sessionUser.email);
+    const freshUser = allUsers.find(u => u.email && u.email.toLowerCase() === sessionUser.email.toLowerCase());
     if (!freshUser) return; // User not found in master list
 
     // Preserve session-only fields that may not be in the master list
@@ -194,7 +252,7 @@ function refreshActiveUserSession() {
     }
 
     // Write the updated session back (bypassing our interceptor to avoid re-push loop)
-    originalSetItem.call(localStorage, 'ocio_user', JSON.stringify(freshUser));
+    originalSetItem('ocio_user', JSON.stringify(freshUser));
     console.log('[CloudSync] Session refreshed. Balance:', freshUser.balance, 'Name:', freshUser.name);
   } catch (e) {
     console.warn('[CloudSync] refreshActiveUserSession error:', e);
@@ -203,7 +261,7 @@ function refreshActiveUserSession() {
 
 /* --- Intercept localStorage.setItem to auto-push changes to cloud --- */
 localStorage.setItem = function(key, value) {
-  originalSetItem.apply(this, arguments);
+  originalSetItem(key, value);
   if (SYNC_KEYS.includes(key)) {
     // Debounce cloud pushes to avoid flooding the API
     if (window._cloudPushTimeout) clearTimeout(window._cloudPushTimeout);
@@ -214,7 +272,7 @@ localStorage.setItem = function(key, value) {
         if (!data[k]) data[k] = (k === 'ocio_wallet_addresses') ? {} : [];
       });
       await cloudPush(data);
-    }, 300);
+    }, 400);
   }
 };
 
@@ -227,7 +285,7 @@ async function cloudPushAll() {
   const data = {};
   SYNC_KEYS.forEach(k => {
     try { data[k] = JSON.parse(localStorage.getItem(k)); } catch { data[k] = null; }
-    if (!data[k]) data[k] = (k === 'ocio_wallet_addresses') ? {} : [];
+    if (data[k] === null || data[k] === undefined) data[k] = (k === 'ocio_wallet_addresses') ? {} : [];
   });
   return await cloudPush(data);
 }
@@ -497,7 +555,9 @@ function getAllUsers() {
 }
 
 function saveAllUsers(users) {
-  localStorage.setItem('ocio_users', JSON.stringify(users));
+  // Only save valid users (must have email)
+  const validUsers = Array.isArray(users) ? users.filter(u => u && u.email) : [];
+  localStorage.setItem('ocio_users', JSON.stringify(validUsers));
 }
 
 function addUserToList(user) {
@@ -632,7 +692,7 @@ function initLogin() {
 
     // Read the merged (cloud + local) user list
     const allUsers = getAllUsers();
-    const existingUser = allUsers.find(u => u.email.toLowerCase() === email);
+    const existingUser = allUsers.find(u => u.email && u.email.toLowerCase() === email);
 
     if (!existingUser) {
       showError(errorEl, 'Account not found. Please register first or check your internet connection.');
@@ -645,8 +705,8 @@ function initLogin() {
 
     // Store the full, cloud-authoritative user object as the session
     // This ensures the dashboard immediately shows the correct cloud balance
-    originalSetItem.call(localStorage, 'ocio_user', JSON.stringify(existingUser));
-    originalSetItem.call(localStorage, 'ocio_logged_in', 'true');
+    originalSetItem('ocio_user', JSON.stringify(existingUser));
+    originalSetItem('ocio_logged_in', 'true');
 
     window.location.href = 'dashboard.html';
   });
@@ -741,9 +801,9 @@ function initRegister() {
 
     // Add to local users list and set as active session
     const updatedUsers = [...allUsers, newUser];
-    originalSetItem.call(localStorage, 'ocio_users', JSON.stringify(updatedUsers));
-    originalSetItem.call(localStorage, 'ocio_user', JSON.stringify(newUser));
-    originalSetItem.call(localStorage, 'ocio_logged_in', 'true');
+    originalSetItem('ocio_users', JSON.stringify(updatedUsers));
+    originalSetItem('ocio_user', JSON.stringify(newUser));
+    originalSetItem('ocio_logged_in', 'true');
 
     // Immediately push the new account to cloud so it appears on admin dashboard
     // and is available on all devices right away
@@ -1217,6 +1277,7 @@ async function initDeposit() {
         let deps = [];
         try { deps = JSON.parse(localStorage.getItem('ocio_deposits')) || []; } catch {}
         deps.push({
+          id: generateTxId(),
           email: user.email,
           name: user.name,
           method: 'Card',
@@ -1245,6 +1306,7 @@ async function initDeposit() {
         let deps = [];
         try { deps = JSON.parse(localStorage.getItem('ocio_deposits')) || []; } catch {}
         deps.push({
+          id: generateTxId(),
           email: user.email,
           name: user.name,
           method: 'Bank Wire',
@@ -1274,6 +1336,7 @@ async function initDeposit() {
         let deps = [];
         try { deps = JSON.parse(localStorage.getItem('ocio_deposits')) || []; } catch {}
         deps.push({
+          id: generateTxId(),
           email: user.email,
           name: user.name,
           method: coin,
@@ -1528,7 +1591,7 @@ function initAdmin() {
       if (u) {
         u.balance = (u.balance || 0) + amount;
         // Write directly via originalSetItem to avoid debounce delay
-        originalSetItem.call(localStorage, 'ocio_users', JSON.stringify(users));
+        originalSetItem('ocio_users', JSON.stringify(users));
 
         // Add auto-approved transaction entry
         let deps = [];
@@ -1545,6 +1608,7 @@ function initAdmin() {
         }
 
         deps.push({
+          id: generateTxId(),
           email: u.email,
           name: u.name,
           method: 'Direct Credit',
@@ -1552,7 +1616,7 @@ function initAdmin() {
           status: 'Approved',
           date: transDate
         });
-        originalSetItem.call(localStorage, 'ocio_deposits', JSON.stringify(deps));
+        originalSetItem('ocio_deposits', JSON.stringify(deps));
 
         // Immediately push all changes to cloud so user sees updated balance instantly
         try {
@@ -1618,7 +1682,7 @@ window.handleAdminUserFeeChange = async function(email, newFeeVal) {
   if (u) {
     u.withdrawalFee = parseFloat(newFeeVal);
     // Use originalSetItem to avoid debounce, then push immediately
-    originalSetItem.call(localStorage, 'ocio_users', JSON.stringify(users));
+    originalSetItem('ocio_users', JSON.stringify(users));
     try { await cloudPushAll(); } catch {}
   }
 };
@@ -1826,13 +1890,13 @@ window.handleDepositAction = async function(index, status) {
   try { deps = JSON.parse(localStorage.getItem('ocio_deposits')) || []; } catch {}
   if (deps[index] && deps[index].status === 'Pending') {
     deps[index].status = status;
-    originalSetItem.call(localStorage, 'ocio_deposits', JSON.stringify(deps));
+    originalSetItem('ocio_deposits', JSON.stringify(deps));
     if (status === 'Approved') {
       const users = getAllUsers();
       const u = users.find(user => user.email === deps[index].email);
       if (u) {
         u.balance = (u.balance || 0) + parseFloat(deps[index].amount);
-        originalSetItem.call(localStorage, 'ocio_users', JSON.stringify(users));
+        originalSetItem('ocio_users', JSON.stringify(users));
       }
     }
     // Immediately push to cloud so the user sees their updated balance on any device
@@ -1847,13 +1911,13 @@ window.handleWithdrawalAction = async function(index, status) {
   try { wds = JSON.parse(localStorage.getItem('ocio_withdrawals')) || []; } catch {}
   if (wds[index] && wds[index].status === 'Pending') {
     wds[index].status = status;
-    originalSetItem.call(localStorage, 'ocio_withdrawals', JSON.stringify(wds));
+    originalSetItem('ocio_withdrawals', JSON.stringify(wds));
     if (status === 'Approved') {
       const users = getAllUsers();
       const u = users.find(user => user.email === wds[index].email);
       if (u) {
         u.balance = Math.max(0, (u.balance || 0) - parseFloat(wds[index].amount));
-        originalSetItem.call(localStorage, 'ocio_users', JSON.stringify(users));
+        originalSetItem('ocio_users', JSON.stringify(users));
       }
     }
     // Immediately push to cloud so the user sees their updated balance on any device
@@ -1944,6 +2008,7 @@ async function initWithdraw() {
     try { wds = JSON.parse(localStorage.getItem('ocio_withdrawals')) || []; } catch {}
     
     wds.push({
+      id: generateTxId(),
       user: user ? user.name : 'Unknown',
       email: user ? user.email : '',
       bank, account, routing, amount,
