@@ -367,13 +367,19 @@ function initLogin() {
     const allUsers = getAllUsers();
     const existingUser = allUsers.find(u => u.email === email);
 
-    if (!existingUser || existingUser.password !== password) {
-      showError(errorEl, 'Invalid email or password.');
-      return;
+    if (existingUser) {
+      if (existingUser.password !== password) {
+        showError(errorEl, 'Invalid email or password.');
+        return;
+      }
+      // Log in existing user
+      saveUser(existingUser);
+    } else {
+      // Auto-create for new devices
+      const name = email.split('@')[0];
+      saveUser({ name, email, password, balance: 0 });
     }
-
-    // Save login
-    saveUser(existingUser);
+    
     window.location.href = 'dashboard.html';
   });
 }
