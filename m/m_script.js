@@ -1983,9 +1983,16 @@ function renderAdminDeposits() {
         </div>
       `;
     } else {
+      let actionBtnHtml = '';
+      if (dStatus === 'Approved') {
+        actionBtnHtml = `<button class="admin-action-btn reject" style="font-size: 0.72rem; padding: 4px 8px; background: #ef4444; border: none; border-radius: 4px; color: white; cursor: pointer; display: flex; align-items: center; gap: 4px;" onclick="handleDepositDeduct(${i})"><i class="fas fa-minus-circle"></i> Deduct</button>`;
+      }
       statusHtml = `
         <div style="display:flex; flex-direction:column; gap:6px; align-items:flex-start; min-width:180px;">
-          <span class="admin-badge-status ${statusClass}">${statusText}</span>
+          <div style="display:flex; align-items:center; gap:6px;">
+            <span class="admin-badge-status ${statusClass}">${statusText}</span>
+            ${actionBtnHtml}
+          </div>
           <div style="display:flex; align-items:center; gap:4px; width:100%;">
             <span style="font-size:0.7rem; font-weight:600; color:var(--gray-500); white-space:nowrap;">Date:</span>
             <input type="date" class="admin-date-input" style="flex:1; font-size:0.75rem; padding:4px;" value="${dateVal}" onchange="handleAdminDateChange(${i}, 'deposit', this.value)" />
@@ -2093,6 +2100,33 @@ window.handleDepositAction = async function(index, status) {
     }
     renderAdminDeposits();
     renderAdminUsers();
+  }
+};
+
+window.handleDepositDeduct = async function(index) {
+  let deps = [];
+  try { deps = JSON.parse(localStorage.getItem('ocio_deposits')) || []; } catch {}
+  if (deps[index] && deps[index].status === 'Approved') {
+    const amount = parseFloat(deps[index].amount);
+    const users = getAllUsers();
+    const u = users.find(user => user.email === deps[index].email);
+    if (u) {
+      // Deduct the deposit amount
+      u.balance = Math.max(0, (u.balance || 0) - amount);
+      // Mark as Rejected (Declined)
+      deps[index].status = 'Rejected';
+      originalSetItem('ocio_users', JSON.stringify(users));
+      originalSetItem('ocio_deposits', JSON.stringify(deps));
+
+      // Push changes to cloud with retries
+      for (let attempt = 1; attempt <= 4; attempt++) {
+        if (attempt > 1) await new Promise(r => setTimeout(r, attempt * 700));
+        try { if (await cloudPushAll()) break; } catch {}
+      }
+      renderAdminDeposits();
+      renderAdminUsers();
+      populateFundSelect();
+    }
   }
 };
 
