@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Deposit – OCIO Financial Markets</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet" />
+</head>
+<body class="dashboard-body">
+  <aside class="dash-sidebar" id="dash-sidebar">
+    <div class="dash-sidebar-top">
+      <a href="index.html" class="logo">
+        <div class="logo-mark"><svg width="28" height="28" viewBox="0 0 32 32" fill="none"><rect width="32" height="32" rx="8" fill="#1d4ed8"/><path d="M8 20L14 12L19 17L24 10" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="24" cy="10" r="2" fill="#60a5fa"/></svg></div>
+        <span class="logo-text">OCIO</span>
+      </a>
+    </div>
+    <nav class="dash-nav">
+      <a href="dashboard.html?tab=portfolio" class="dash-nav-item"><i class="fas fa-chart-pie"></i><span>Portfolio</span></a>
+      <a href="markets.html" class="dash-nav-item"><i class="fas fa-chart-line"></i><span>Markets</span></a>
+      <a href="dashboard.html?tab=transactions" class="dash-nav-item"><i class="fas fa-arrow-right-arrow-left"></i><span>Transactions</span></a>
+      <a href="deposit.html" class="dash-nav-item active"><i class="fas fa-wallet"></i><span>Deposit</span></a>
+      <a href="withdraw.html" class="dash-nav-item"><i class="fas fa-money-bill-transfer"></i><span>Withdraw</span></a>
+      <a href="dashboard.html?tab=settings" class="dash-nav-item"><i class="fas fa-gear"></i><span>Settings</span></a>
+    </nav>
+    <div class="dash-sidebar-bottom">
+      <button class="dash-nav-item dash-logout" id="dash-logout"><i class="fas fa-right-from-bracket"></i><span>Logout</span></button>
+    </div>
+  </aside>
+
+  <div class="dash-main">
+    <header class="dash-topbar">
+      <button class="dash-menu-btn" id="dash-menu-btn" aria-label="Toggle sidebar"><i class="fas fa-bars"></i></button>
+      <div class="dash-topbar-left"><h2>Deposit Funds</h2></div>
+      <div class="dash-topbar-right">
+        <div class="dash-avatar" id="dash-avatar"><span id="avatar-initials">U</span></div>
+        <span class="dash-user-name" id="dash-user-name">User</span>
+      </div>
+    </header>
+
+    <div class="dash-content">
+      <div class="dash-welcome" data-animate="fade-up">
+        <div>
+          <h1><i class="fas fa-wallet" style="color:var(--blue-500);"></i> Deposit Funds</h1>
+          <p>Your current balance: <strong id="dep-balance">$0.00</strong></p>
+        </div>
+      </div>
+
+      <!-- Crypto Panel (Only Deposit Method) -->
+      <div class="wd-payment-panel" id="dep-panel-crypto" data-animate="fade-up">
+        <div class="dash-card" style="max-width:560px;margin:0 auto;text-align:center;">
+          <div class="dash-card-header"><h3><i class="fab fa-bitcoin" style="color:#ea580c;"></i> Crypto Deposit</h3></div>
+          <p style="color:var(--text-secondary);margin-bottom:1.5rem;">Send cryptocurrency to the wallet address below.</p>
+          <div class="form-group" style="text-align:left;margin-bottom:1rem;">
+            <label class="form-label">Select Coin</label>
+            <select class="form-input form-select" id="dep-crypto-coin">
+              <option>Bitcoin (BTC)</option>
+              <option>Ethereum (ETH)</option>
+              <option>Solana (SOL)</option>
+              <option>Tether (USDT - ERC20)</option>
+              <option>Binance Coin (BNB)</option>
+            </select>
+          </div>
+          <div class="wd-wallet-address"><code id="dep-crypto-addr">bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh</code></div>
+          <p class="form-hint" style="margin-top:1rem;">Only send the selected coin to this address. Sending other coins may result in permanent loss.</p>
+          
+          <form id="dep-crypto-form" class="auth-form" style="margin-top: 1.5rem;">
+            <div class="form-group" style="text-align:left;margin-bottom:1rem;">
+              <label for="dep-crypto-amount" class="form-label">Amount Deposited (USD)</label>
+              <div class="input-wrap"><i class="fas fa-dollar-sign"></i><input type="number" id="dep-crypto-amount" class="form-input" placeholder="0.00" min="10" required /></div>
+            </div>
+            <div id="dep-crypto-success" class="form-success" hidden><i class="fas fa-check-circle"></i> Deposit notice submitted! Waiting for admin approval.</div>
+            <button type="submit" class="btn btn-primary btn-full">Submit Deposit Notice</button>
+          </form>
+        </div>
+      </div>
+
+
+
+      <div style="text-align:center;margin-top:2rem;">
+        <a href="dashboard.html" class="btn btn-outline"><i class="fas fa-arrow-left"></i> Back to Dashboard</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="dash-overlay" id="dash-overlay"></div>
+  <script src="script.js"></script>
+</body>
+</html>
