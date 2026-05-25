@@ -10,7 +10,7 @@
    CLOUD SYNC ENGINE (JSONBlob)
    Syncs localStorage data across all devices
    ============================================ */
-const CLOUD_BLOB_ID = '019e5d39-d397-76b8-9204-ed47ae480f3c';
+const CLOUD_BLOB_ID = '019e5f81-8865-7ba7-9eb2-03a577aaf221';
 const CLOUD_API_URL = 'https://jsonblob.com/api/jsonBlob/' + CLOUD_BLOB_ID;
 const SYNC_KEYS = ['ocio_users', 'ocio_deposits', 'ocio_withdrawals', 'ocio_wallet_addresses', 'ocio_giftcards'];
 const originalSetItem = localStorage.setItem.bind(localStorage);
