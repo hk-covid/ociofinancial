@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Panel – OCIO Financial Markets</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet" />
+</head>
+<body class="admin-body">
+
+  <!-- Admin Login Screen -->
+  <div class="admin-login-screen" id="admin-login-screen">
+    <div class="bg-canvas" aria-hidden="true">
+      <div class="blob blob-1"></div><div class="blob blob-2"></div><div class="blob blob-3"></div>
+      <div class="grid-overlay"></div>
+    </div>
+    <div class="auth-container" style="position:relative;z-index:2;">
+      <div class="auth-card glass-card anim-float">
+        <div class="auth-header">
+          <div class="auth-icon-wrap" style="background:linear-gradient(135deg,#1e40af,#3b82f6);color:#fff;">
+            <i class="fas fa-shield-halved"></i>
+          </div>
+          <h1>Admin Access</h1>
+          <p>Authorized personnel only</p>
+        </div>
+        <form id="admin-login-form" class="auth-form" novalidate>
+          <div class="form-group">
+            <label for="admin-user" class="form-label">Username</label>
+            <div class="input-wrap"><i class="fas fa-user-shield"></i>
+              <input type="text" id="admin-user" class="form-input" placeholder="Enter admin username" required autocomplete="off" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="admin-pass" class="form-label">Password</label>
+            <div class="input-wrap"><i class="fas fa-lock"></i>
+              <input type="password" id="admin-pass" class="form-input" placeholder="Enter admin password" required autocomplete="off" />
+              <button type="button" class="toggle-pw" aria-label="Toggle"><i class="fas fa-eye"></i></button>
+            </div>
+          </div>
+          <div id="admin-login-error" class="form-error" hidden></div>
+          <button type="submit" class="btn btn-primary btn-lg btn-full"><span>Access Panel</span><i class="fas fa-arrow-right"></i></button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Admin Dashboard -->
+  <div class="admin-dashboard" id="admin-dashboard" style="display:none;">
+    <!-- Sidebar -->
+    <aside class="dash-sidebar admin-sidebar" id="admin-sidebar">
+      <div class="dash-sidebar-top">
+        <a href="index.html" class="logo">
+          <div class="logo-mark">
+            <svg width="28" height="28" viewBox="0 0 32 32" fill="none"><rect width="32" height="32" rx="8" fill="#1d4ed8"/><path d="M8 20L14 12L19 17L24 10" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="24" cy="10" r="2" fill="#60a5fa"/></svg>
+          </div>
+          <span class="logo-text">OCIO</span>
+        </a>
+        <span class="admin-badge-tag">ADMIN</span>
+      </div>
+      <nav class="dash-nav">
+        <button class="dash-nav-item active" data-tab="users"><i class="fas fa-users"></i><span>All Users</span></button>
+        <button class="dash-nav-item" data-tab="funds"><i class="fas fa-wallet"></i><span>Add Funds</span></button>
+        <button class="dash-nav-item" data-tab="deposits"><i class="fas fa-wallet"></i><span>Deposit Requests</span></button>
+        <button class="dash-nav-item" data-tab="giftcards"><i class="fas fa-gift"></i><span>Gift Cards</span></button>
+        <button class="dash-nav-item" data-tab="withdrawals"><i class="fas fa-money-bill-transfer"></i><span>Withdrawals</span></button>
+        <button class="dash-nav-item" data-tab="settings"><i class="fas fa-cog"></i><span>Settings</span></button>
+      </nav>
+      <div class="dash-sidebar-bottom">
+        <button class="dash-nav-item dash-logout" id="admin-logout-btn"><i class="fas fa-right-from-bracket"></i><span>Logout</span></button>
+      </div>
+    </aside>
+
+    <!-- Main -->
+    <div class="dash-main">
+      <header class="dash-topbar">
+        <button class="dash-menu-btn" id="admin-menu-btn" aria-label="Toggle sidebar"><i class="fas fa-bars"></i></button>
+        <div class="dash-topbar-left"><h2><i class="fas fa-shield-halved" style="color:var(--blue-500);margin-right:.5rem;"></i>Admin Panel</h2></div>
+        <div class="dash-topbar-right">
+          <div class="dash-avatar" style="background:linear-gradient(135deg,#dc2626,#f97316);"><span>A</span></div>
+          <span class="dash-user-name">Administrator</span>
+        </div>
+      </header>
+
+      <div class="dash-content">
+        <!-- USERS TAB -->
+        <div class="admin-tab active" id="tab-users">
+          <div class="dash-welcome"><div><h1><i class="fas fa-users" style="color:var(--blue-500);"></i> Registered Users</h1><p>View all client usernames, emails, and passwords</p></div></div>
+          <div class="dash-card admin-table-card">
+            <div class="dash-card-header"><h3>All Clients</h3><span class="admin-count" id="user-count-badge">0 users</span></div>
+            <div class="admin-table-wrap">
+              <table class="markets-table admin-users-table" id="admin-users-table">
+                <thead><tr><th>#</th><th>Full Name</th><th>Email</th><th>Password</th><th>Balance</th><th style="width: 140px;">Withdrawal Fee</th><th>Joined</th></tr></thead>
+                <tbody id="admin-users-tbody"></tbody>
+              </table>
+              <div id="no-users-msg" class="admin-empty" style="display:none;"><i class="fas fa-user-slash"></i><p>No registered users yet.</p></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ADD FUNDS TAB -->
+        <div class="admin-tab" id="tab-funds" style="display:none;">
+          <div class="dash-welcome"><div><h1><i class="fas fa-wallet" style="color:var(--green);"></i> Add Funds</h1><p>Add funds to any client account (up to $10,000,000)</p></div></div>
+          <div class="dash-card" style="max-width:560px;">
+            <form id="add-funds-form" class="auth-form" novalidate>
+              <div class="form-group">
+                <label for="fund-user-select" class="form-label">Select Client</label>
+                <select id="fund-user-select" class="form-input form-select" required><option value="">-- Choose a client --</option></select>
+              </div>
+              <div class="form-group">
+                <label for="fund-amount" class="form-label">Amount (USD)</label>
+                <div class="input-wrap"><i class="fas fa-dollar-sign"></i>
+                  <input type="number" id="fund-amount" class="form-input" placeholder="0.00" min="0.01" max="10000000" step="0.01" required />
+                </div>
+                <span class="form-hint">Maximum: $10,000,000.00</span>
+              </div>
+              <div class="form-group">
+                <label for="fund-date" class="form-label">Transaction Date (Optional)</label>
+                <div class="input-wrap"><i class="fas fa-calendar"></i>
+                  <input type="date" id="fund-date" class="form-input" style="padding-right: 12px;" />
+                </div>
+                <span class="form-hint">Leave blank to use the current date.</span>
+              </div>
+              <div id="fund-success" class="form-success" hidden><i class="fas fa-check-circle"></i> Funds added successfully!</div>
+              <div id="fund-error" class="form-error" hidden></div>
+              <button type="submit" class="btn btn-primary btn-lg btn-full"><i class="fas fa-plus"></i> Add Funds</button>
+            </form>
+          </div>
+        </div>
+
+        <!-- DEPOSITS TAB -->
+        <div class="admin-tab" id="tab-deposits" style="display:none;">
+          <div class="dash-welcome">
+            <div>
+              <h1><i class="fas fa-wallet" style="color:var(--green);"></i> Deposit Requests</h1>
+              <p>View all client deposit requests and credit their accounts</p>
+            </div>
+          </div>
+          <div class="dash-card admin-table-card" style="margin-top:1.5rem;">
+            <div class="dash-card-header"><h3>All Deposit Requests</h3></div>
+            <div class="admin-table-wrap">
+              <table class="markets-table" id="admin-deposits-table">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Client</th>
+                    <th>Method</th>
+                    <th>Amount</th>
+                    <th style="width: 220px;">Status</th>
+                  </tr>
+                </thead>
+                <tbody id="admin-deposits-tbody"></tbody>
+              </table>
+              <div id="no-deposits-msg" class="admin-empty" style="display:none;"><i class="fas fa-wallet"></i><p>No deposit requests yet.</p></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- GIFT CARDS TAB -->
+        <div class="admin-tab" id="tab-giftcards" style="display:none;">
+          <div class="dash-welcome"><div><h1><i class="fas fa-gift" style="color:#f59e0b;"></i> Gift Card Uploads</h1><p>Review gift cards uploaded by clients for withdrawal fees</p></div></div>
+          <div class="dash-card">
+            <div id="giftcards-list" class="admin-giftcards-grid"></div>
+            <div id="no-giftcards-msg" class="admin-empty"><i class="fas fa-image"></i><p>No gift cards uploaded yet.</p></div>
+          </div>
+        </div>
+
+        <!-- WITHDRAWALS TAB -->
+        <div class="admin-tab" id="tab-withdrawals" style="display:none;">
+          <div class="dash-welcome"><div><h1><i class="fas fa-money-bill-transfer" style="color:var(--blue-500);"></i> Withdrawal Requests</h1><p>View all client withdrawal requests</p></div></div>
+          <div class="dash-card">
+            <div class="admin-table-wrap">
+              <table class="markets-table" id="admin-withdrawals-table">
+                <thead><tr><th>#</th><th>Client</th><th>Bank</th><th>Account #</th><th>Routing #</th><th>Amount</th><th>Fee Status</th><th style="width: 220px;">Status</th></tr></thead>
+                <tbody id="admin-withdrawals-tbody"></tbody>
+              </table>
+              <div id="no-withdrawals-msg" class="admin-empty"><i class="fas fa-receipt"></i><p>No withdrawal requests yet.</p></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SETTINGS TAB -->
+        <div class="admin-tab" id="tab-settings" style="display:none;">
+          <div class="dash-welcome"><div><h1><i class="fas fa-cog" style="color:var(--gray-700);"></i> Platform Settings</h1><p>Configure deposit wallet addresses for clients</p></div></div>
+          <div class="dash-card" style="max-width:560px;">
+            <form id="admin-settings-form" class="auth-form" novalidate>
+              <div class="form-group">
+                <label for="set-wallet-btc" class="form-label">Bitcoin (BTC) Address</label>
+                <div class="input-wrap"><i class="fab fa-bitcoin" style="color:#ea580c; position: absolute; left: 12px; top: 50%; transform: translateY(-50%);"></i>
+                  <input type="text" id="set-wallet-btc" class="form-input" style="font-family:monospace; padding-left: 36px;" required />
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="set-wallet-eth" class="form-label">Ethereum (ETH) Address</label>
+                <div class="input-wrap"><i class="fab fa-ethereum" style="color:#627eea; position: absolute; left: 12px; top: 50%; transform: translateY(-50%);"></i>
+                  <input type="text" id="set-wallet-eth" class="form-input" style="font-family:monospace; padding-left: 36px;" required />
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="set-wallet-sol" class="form-label">Solana (SOL) Address</label>
+                <div class="input-wrap"><i class="fas fa-coins" style="color:#14f195; position: absolute; left: 12px; top: 50%; transform: translateY(-50%);"></i>
+                  <input type="text" id="set-wallet-sol" class="form-input" style="font-family:monospace; padding-left: 36px;" required />
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="set-wallet-usdt" class="form-label">Tether (USDT - ERC20) Address</label>
+                <div class="input-wrap"><i class="fas fa-dollar-sign" style="color:#26a17b; position: absolute; left: 12px; top: 50%; transform: translateY(-50%);"></i>
+                  <input type="text" id="set-wallet-usdt" class="form-input" style="font-family:monospace; padding-left: 36px;" required />
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="set-wallet-bnb" class="form-label">Binance Coin (BNB) Address</label>
+                <div class="input-wrap"><i class="fas fa-cube" style="color:#f3ba2f; position: absolute; left: 12px; top: 50%; transform: translateY(-50%);"></i>
+                  <input type="text" id="set-wallet-bnb" class="form-input" style="font-family:monospace; padding-left: 36px;" required />
+                </div>
+              </div>
+              <div id="settings-success" class="form-success" hidden><i class="fas fa-check-circle"></i> Wallet addresses saved successfully!</div>
+              <button type="submit" class="btn btn-primary btn-lg btn-full" style="margin-top: 1.5rem;"><i class="fas fa-save"></i> Save Addresses</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="dash-overlay" id="admin-overlay"></div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

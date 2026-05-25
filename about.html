@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>About – OCIO Financial Markets</title>
+  <meta name="description" content="Learn about OCIO Financial Markets — our mission, story, and team." />
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet" />
+</head>
+<body>
+  <div class="ticker-banner" id="ticker-banner">
+    <div class="ticker-inner">
+      <span class="ticker-label">LIVE</span>
+      <div class="ticker-track" id="ticker-track">
+        <div class="ticker-items" id="ticker-items"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="bg-canvas" aria-hidden="true">
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    <div class="blob blob-3"></div>
+    <div class="grid-overlay"></div>
+  </div>
+
+  <header class="site-header" id="site-header">
+    <div class="container header-inner">
+      <a href="index.html" class="logo">
+        <div class="logo-mark">
+          <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+            <rect width="32" height="32" rx="8" fill="#1d4ed8"/>
+            <path d="M8 20L14 12L19 17L24 10" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="24" cy="10" r="2" fill="#60a5fa"/>
+          </svg>
+        </div>
+        <span class="logo-text">OCIO</span>
+        <span class="logo-tag">Financial</span>
+      </a>
+      <nav class="main-nav" id="main-nav" role="navigation" aria-label="Main navigation">
+        <ul>
+          <li><a href="index.html" class="nav-link">Home</a></li>
+          <li><a href="markets.html" class="nav-link">Markets</a></li>
+          <li><a href="about.html" class="nav-link active">About</a></li>
+          <li><a href="login.html" class="nav-link">Login</a></li>
+          <li class="nav-cta-item"><a href="register.html" class="btn btn-primary btn-sm">Open Account</a></li>
+        </ul>
+      </nav>
+      <button class="hamburger" id="hamburger" aria-label="Toggle menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </header>
+
+  <div class="mobile-overlay" id="mobile-overlay" aria-hidden="true">
+    <nav class="mobile-nav">
+      <ul>
+        <li><a href="index.html">Home</a></li>
+        <li><a href="markets.html">Markets</a></li>
+        <li><a href="about.html">About</a></li>
+        <li><a href="login.html">Login</a></li>
+        <li><a href="register.html" class="btn btn-primary" style="display:inline-block;margin-top:1rem;">Open Account</a></li>
+      </ul>
+    </nav>
+  </div>
+
+  <main>
+    <section class="page-hero">
+      <div class="container">
+        <div class="section-tag">Our Story</div>
+        <h1 class="section-heading" style="font-size:clamp(2.2rem,4vw,3.2rem);">About OCIO Financial</h1>
+        <p class="section-sub" style="max-width:560px;margin:0 auto;">We're building the future of institutional-grade investing, accessible to everyone.</p>
+      </div>
+    </section>
+
+    <section class="about-content-section">
+      <div class="container">
+        <div class="about-grid" data-animate="fade-up">
+          <div class="about-card glass-card">
+            <div class="feature-icon-wrap blue"><i class="fas fa-bullseye"></i></div>
+            <h3>Our Mission</h3>
+            <p>At OCIO, our mission is to democratize access to financial markets by providing a simple, secure, and powerful platform that anyone can use — regardless of technical expertise or financial resources.</p>
+          </div>
+          <div class="about-card glass-card">
+            <div class="feature-icon-wrap indigo"><i class="fas fa-rocket"></i></div>
+            <h3>Our Story</h3>
+            <p>Founded by a team of finance experts and engineers, OCIO has grown to serve over 50,000 investors across 150+ countries. We believe everyone should have access to professional-grade investing tools.</p>
+          </div>
+          <div class="about-card glass-card">
+            <div class="feature-icon-wrap sky"><i class="fas fa-microchip"></i></div>
+            <h3>Our Technology</h3>
+            <p>We operate state-of-the-art infrastructure with 256-bit encryption, real-time analytics, and AI-powered insights to maximize your portfolio performance and protect your assets.</p>
+          </div>
+          <div class="about-card glass-card">
+            <div class="feature-icon-wrap emerald"><i class="fas fa-handshake"></i></div>
+            <h3>Our Commitment</h3>
+            <p>Transparency, security, and customer satisfaction are at our core. Every account is protected by bank-grade security, and our 24/7 support team is always ready to help.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Stats -->
+    <section style="padding:4rem 0;">
+      <div class="stats-bar" data-animate="fade-up">
+        <div class="container stats-inner">
+          <div class="stat"><div class="stat-number">$2.5B+</div><div class="stat-label">Assets Under Management</div></div>
+          <div class="stat-divider"></div>
+          <div class="stat"><div class="stat-number">50K+</div><div class="stat-label">Active Investors</div></div>
+          <div class="stat-divider"></div>
+          <div class="stat"><div class="stat-number">150+</div><div class="stat-label">Countries Supported</div></div>
+          <div class="stat-divider"></div>
+          <div class="stat"><div class="stat-number">99.9%</div><div class="stat-label">Platform Uptime</div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Why Choose -->
+    <section class="features-section">
+      <div class="container">
+        <div class="section-header" data-animate="fade-up">
+          <div class="section-tag">Why OCIO</div>
+          <h2 class="section-heading">Built for serious investors</h2>
+        </div>
+        <div class="features-grid" data-animate="fade-up">
+          <div class="feature-card">
+            <div class="feature-icon-wrap teal"><i class="fas fa-bolt"></i></div>
+            <h3>Instant Start</h3>
+            <p>Begin investing within 60 seconds of account creation. No complex setup required.</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon-wrap blue"><i class="fas fa-shield-halved"></i></div>
+            <h3>Bank-Grade Security</h3>
+            <p>256-bit encryption, 2FA, and cold storage for 95% of funds. Your assets are safe.</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon-wrap violet"><i class="fas fa-chart-line"></i></div>
+            <h3>Real-Time Analytics</h3>
+            <p>Advanced performance metrics and portfolio insights updated in real time.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="cta-section" data-animate="fade-up">
+      <div class="container">
+        <div class="cta-inner">
+          <div class="cta-content">
+            <h2>Ready to grow your wealth?</h2>
+            <p>Join over 50,000 investors already building their financial future with OCIO.</p>
+          </div>
+          <div class="cta-actions">
+            <a href="register.html" class="btn btn-white btn-lg">Open Free Account</a>
+            <a href="contact.html" class="btn btn-outline-white btn-lg">Contact Us</a>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <div class="footer-brand">
+        <a href="index.html" class="logo">
+          <div class="logo-mark">
+            <svg width="28" height="28" viewBox="0 0 32 32" fill="none">
+              <rect width="32" height="32" rx="8" fill="#1d4ed8"/>
+              <path d="M8 20L14 12L19 17L24 10" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+              <circle cx="24" cy="10" r="2" fill="#60a5fa"/>
+            </svg>
+          </div>
+          <span class="logo-text">OCIO</span>
+        </a>
+        <p class="footer-tagline">Institutional-grade investing<br/>for everyone.</p>
+        <div class="social-links">
+          <a href="#" aria-label="Twitter"><i class="fab fa-x-twitter"></i></a>
+          <a href="#" aria-label="LinkedIn"><i class="fab fa-linkedin-in"></i></a>
+          <a href="#" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+          <a href="#" aria-label="YouTube"><i class="fab fa-youtube"></i></a>
+        </div>
+      </div>
+      <div class="footer-links">
+        <div class="footer-col"><h5>Platform</h5><ul><li><a href="markets.html">Markets</a></li><li><a href="dashboard.html">Portfolio</a></li><li><a href="register.html">Open Account</a></li></ul></div>
+        <div class="footer-col"><h5>Company</h5><ul><li><a href="about.html">About Us</a></li><li><a href="contact.html">Contact</a></li></ul></div>
+        <div class="footer-col"><h5>Support</h5><ul><li><a href="contact.html">Help Center</a></li><li><a href="#">FAQ</a></li></ul></div>
+        <div class="footer-col"><h5>Legal</h5><ul><li><a href="#">Terms of Service</a></li><li><a href="#">Privacy Policy</a></li><li><a href="#">Risk Disclosure</a></li></ul></div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <div class="container footer-bottom-inner">
+        <p>&copy; 2024 OCIO Financial Markets. All rights reserved.</p>
+        <p class="risk-notice">Trading involves risk. Past performance does not guarantee future results.</p>
+      </div>
+    </div>
+  </footer>
+
+  <div class="whatsapp-fab" id="whatsapp-fab" aria-label="Contact support via WhatsApp">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white" width="28" height="28">
+      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
+      <path d="M12 0C5.373 0 0 5.373 0 12c0 2.124.554 4.122 1.524 5.855L.057 23.707a.5.5 0 0 0 .617.608l5.963-1.563A11.945 11.945 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.89 0-3.663-.52-5.178-1.426l-.37-.22-3.538.927.944-3.446-.242-.376A9.944 9.944 0 0 1 2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/>
+    </svg>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
