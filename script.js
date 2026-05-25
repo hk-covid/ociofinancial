@@ -208,14 +208,23 @@ async function cloudSyncFull() {
     }
   });
 
-  // Push the fully merged state back to cloud.
-  // This ensures new local registrations and transactions are persisted to cloud.
+  // Push the fully merged state back to cloud ONLY if it's different.
+  // This prevents spamming JSONBlob with PUT requests on every page load
+  // or admin dashboard poll, which caused rate-limiting failures.
   const finalData = {};
   SYNC_KEYS.forEach(k => {
     try { finalData[k] = JSON.parse(localStorage.getItem(k)); } catch { finalData[k] = null; }
     if (!finalData[k]) finalData[k] = (k === 'ocio_wallet_addresses') ? {} : [];
   });
-  await cloudPush(finalData);
+
+  const normalizedCloudData = {};
+  SYNC_KEYS.forEach(k => {
+    normalizedCloudData[k] = cloudData[k] || ((k === 'ocio_wallet_addresses') ? {} : []);
+  });
+
+  if (JSON.stringify(finalData) !== JSON.stringify(normalizedCloudData)) {
+    await cloudPush(finalData);
+  }
 
   // After every sync, refresh the logged-in user's session data
   // from the freshly merged users list. This ensures that balance changes made
