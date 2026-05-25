@@ -767,25 +767,7 @@ function initLogin() {
       return;
     }
 
-    // STEP 3: If user not found in cloud, try local storage as a fallback.
-    // Handles accounts whose registration push was rate-limited — they exist
-    // locally on the original device but not yet in cloud. Self-heal pushes
-    // them to cloud so other devices can log in going forward.
-    let foundUserLocalOnly = false;
-    if (!foundUser) {
-      const localFallbackUsers = getAllUsers();
-      foundUser = localFallbackUsers.find(u => u && u.email && u.email.toLowerCase() === email);
-      if (foundUser && foundUser.password !== password) {
-        if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Sign In'; }
-        showError(errorEl, 'Invalid email or password.');
-        return;
-      }
-      if (foundUser && !networkError) {
-        foundUserLocalOnly = true; // exists locally but not in cloud
-      }
-    }
-
-    // STEP 4: If still not found anywhere, show appropriate error
+    // STEP 3: If still not found anywhere, show appropriate error
     if (!foundUser) {
       if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Sign In'; }
       if (networkError) {
@@ -809,23 +791,6 @@ function initLogin() {
       localUsers.push(foundUser);
     }
     originalSetItem('ocio_users', JSON.stringify(localUsers));
-
-    if (foundUserLocalOnly) {
-      // Self-heal: push local-only account to cloud with retries in background.
-      // Does not block navigation.
-      (async () => {
-        for (let attempt = 1; attempt <= 5; attempt++) {
-          if (attempt > 1) await new Promise(r => setTimeout(r, attempt * 800));
-          const ok = await cloudPushAll();
-          if (ok) {
-            console.log('[Login] Self-heal push succeeded (attempt', attempt, ') for:', email);
-            cloudSyncFull().catch(() => {}); // clean up canonical cloud state
-            break;
-          }
-          console.warn('[Login] Self-heal push attempt', attempt, 'failed for:', email);
-        }
-      })();
-    }
 
     // Run full sync in background to pull deposits/withdrawals/balance updates
     cloudSyncFull().catch(() => {});
@@ -934,37 +899,43 @@ function initRegister() {
       joined: new Date().toLocaleDateString('en-US')
     };
 
-    // Merge new user into the canonical list (cloud + local) to prevent stale local state
+    // Prepare what the cloud should look like after adding this user
     const mergedForSave = mergeUsers(localUsersForCheck, cloudCheckUsers);
     mergedForSave.push(newUser);
+
+    const payload = {};
+    SYNC_KEYS.forEach(k => {
+      if (k === 'ocio_users') {
+        payload[k] = mergedForSave;
+      } else {
+        try { payload[k] = JSON.parse(localStorage.getItem(k)); } catch { payload[k] = null; }
+        if (!payload[k]) payload[k] = (k === 'ocio_wallet_addresses') ? {} : [];
+      }
+    });
+
+    // Strict Cloud-First Registration: Push directly to cloud before saving locally
+    let pushOk = false;
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      if (attempt > 1) await new Promise(r => setTimeout(r, attempt * 800));
+      pushOk = await cloudPush(payload);
+      if (pushOk) {
+        console.log('[Register] Account pushed to cloud on attempt', attempt, ':', email);
+        break;
+      }
+    }
+
+    if (!pushOk) {
+      if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Create Account'; }
+      showError(errorEl, 'Server is currently busy (Rate Limited). Please try again in a few minutes.');
+      return;
+    }
+
+    // Push succeeded! NOW we can safely save locally and log in.
     originalSetItem('ocio_users', JSON.stringify(mergedForSave));
     originalSetItem('ocio_user', JSON.stringify(newUser));
     originalSetItem('ocio_logged_in', 'true');
 
-    // Push with retries (up to 5) to survive JSONBlob rate limiting.
-    // A single PUT can be silently dropped; retries ensure the account
-    // reaches the cloud so it appears in the admin panel immediately.
-    let pushOk = false;
-    for (let attempt = 1; attempt <= 5; attempt++) {
-      if (attempt > 1) await new Promise(r => setTimeout(r, attempt * 600));
-      try {
-        pushOk = await cloudPushAll();
-        if (pushOk) {
-          console.log('[Register] Account pushed to cloud on attempt', attempt, ':', email);
-          break;
-        }
-      } catch (err) {
-        console.warn('[Register] Push attempt', attempt, 'threw:', err);
-      }
-    }
-    if (!pushOk) {
-      console.warn('[Register] All 5 push attempts failed for:', email,
-        '— account is local-only; login self-heal will retry on next login from this device.');
-    } else {
-      // Trigger a full sync in background to ensure canonical cloud state is clean
-      cloudSyncFull().catch(() => {});
-    }
-
+    cloudSyncFull().catch(() => {});
     window.location.href = 'dashboard.html';
   });
 }
