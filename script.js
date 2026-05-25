@@ -62,11 +62,12 @@ function mergeArrays(localArr, cloudArr, uniqueKey) {
     if (!map.has(key)) {
       map.set(key, item);
     } else {
-      // If local version has a higher balance (admin updated on this device), prefer local
+      // Cloud is the source of truth for balances and details.
+      // Only merge local profile picture if cloud doesn't have one.
       const existing = map.get(key);
-      if (uniqueKey === 'email' && item.balance !== undefined && existing.balance !== undefined) {
-        if (item.balance > existing.balance || (item.profilePic && !existing.profilePic)) {
-          map.set(key, { ...existing, ...item });
+      if (uniqueKey === 'email') {
+        if (item.profilePic && !existing.profilePic) {
+          map.set(key, { ...existing, profilePic: item.profilePic });
         }
       }
     }
@@ -137,11 +138,13 @@ async function cloudSyncFull() {
   });
 
   // Push the merged result back to cloud
-  const finalData = {};
-  SYNC_KEYS.forEach(k => {
-    try { finalData[k] = JSON.parse(localStorage.getItem(k)) || []; } catch { finalData[k] = []; }
-  });
-  await cloudPush(finalData);
+  if (changed) {
+    const finalData = {};
+    SYNC_KEYS.forEach(k => {
+      try { finalData[k] = JSON.parse(localStorage.getItem(k)) || []; } catch { finalData[k] = []; }
+    });
+    await cloudPush(finalData);
+  }
 
   return changed;
 }
@@ -167,12 +170,29 @@ window._cloudSyncReady = cloudSyncFull().then(changed => {
   console.log('[CloudSync] Initial sync done, data changed:', changed);
   if (changed) {
     // Refresh the current page view if data changed
-    if (typeof renderAdminDashboard === 'function' && document.getElementById('admin-dashboard')) {
-      renderAdminDashboard();
+    if (document.getElementById('admin-dashboard') && document.getElementById('admin-dashboard').style.display !== 'none') {
+      if (typeof renderAdminUsers === 'function') renderAdminUsers();
+      if (typeof renderAdminDeposits === 'function') renderAdminDeposits();
+      if (typeof renderAdminWithdrawals === 'function') renderAdminWithdrawals();
+      if (typeof renderAdminGiftcards === 'function') renderAdminGiftcards();
     }
   }
   return true;
 });
+
+// Auto-poll cloud every 10 seconds if on admin dashboard so new users/transactions appear instantly
+setInterval(() => {
+  if (document.getElementById('admin-dashboard') && document.getElementById('admin-dashboard').style.display !== 'none') {
+    cloudSyncFull().then(changed => {
+      if (changed) {
+        if (typeof renderAdminUsers === 'function') renderAdminUsers();
+        if (typeof renderAdminDeposits === 'function') renderAdminDeposits();
+        if (typeof renderAdminWithdrawals === 'function') renderAdminWithdrawals();
+        if (typeof renderAdminGiftcards === 'function') renderAdminGiftcards();
+      }
+    });
+  }
+}, 10000);
 
 /* ---------- Config ---------- */
 const CONFIG = {
