@@ -670,6 +670,18 @@ function getUserAvatarHtml(name, email) {
 /* ============================================
    LOGIN PAGE
    ============================================ */
+
+/* --- Direct cloud user lookup (bypasses full sync, more reliable for login) --- */
+async function cloudFetchUser(email) {
+  try {
+    const cloudData = await cloudFetch();
+    if (!cloudData || !Array.isArray(cloudData.ocio_users)) return null;
+    return cloudData.ocio_users.find(u => u && u.email && u.email.toLowerCase() === email.toLowerCase()) || null;
+  } catch (e) {
+    return null;
+  }
+}
+
 function initLogin() {
   const form = document.getElementById('login-form');
   if (!form) return;
@@ -700,38 +712,59 @@ function initLogin() {
       return;
     }
 
-    // Show loading state while we pull the latest data from cloud
-    if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Syncing...'; }
+    // Show loading state
+    if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Signing in...'; }
 
-    // Always do a full cloud sync before checking credentials.
-    // This guarantees we have the most up-to-date user list including any
-    // accounts registered on other devices and any admin-made changes.
-    try {
-      await cloudSyncFull();
-    } catch (err) {
-      console.warn('[Login] Cloud sync failed, proceeding with local data:', err);
-    }
+    // STEP 1: Try a direct cloud lookup first — this is the most reliable path.
+    // It does a simple GET without any PUT, so rate-limiting cannot block login.
+    let foundUser = await cloudFetchUser(email);
 
-    if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Sign In'; }
-
-    // Read the merged (cloud + local) user list
-    const allUsers = getAllUsers();
-    const existingUser = allUsers.find(u => u.email && u.email.toLowerCase() === email);
-
-    if (!existingUser) {
-      showError(errorEl, 'Account not found. Please register first or check your internet connection.');
-      return;
-    }
-    if (existingUser.password !== password) {
+    // STEP 2: If cloud lookup returned the user but password is wrong, fail fast.
+    if (foundUser && foundUser.password !== password) {
+      if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Sign In'; }
       showError(errorEl, 'Invalid email or password.');
       return;
     }
 
-    // Store the full, cloud-authoritative user object as the session
-    // This ensures the dashboard immediately shows the correct cloud balance
-    originalSetItem('ocio_user', JSON.stringify(existingUser));
+    // STEP 3: If user not found in cloud, try local storage as a fallback
+    // (handles the case where the user just registered on this device and
+    // the cloud push hasn't completed yet).
+    if (!foundUser) {
+      const localUsers = getAllUsers();
+      foundUser = localUsers.find(u => u && u.email && u.email.toLowerCase() === email);
+      if (foundUser && foundUser.password !== password) {
+        if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Sign In'; }
+        showError(errorEl, 'Invalid email or password.');
+        return;
+      }
+    }
+
+    // STEP 4: If still not found anywhere, show error
+    if (!foundUser) {
+      if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Sign In'; }
+      showError(errorEl, 'Account not found. Please register first or check your internet connection.');
+      return;
+    }
+
+    // Auth passed — store the cloud-authoritative user as the session
+    originalSetItem('ocio_user', JSON.stringify(foundUser));
     originalSetItem('ocio_logged_in', 'true');
 
+    // Also merge into local ocio_users so getUserBalance() works on dashboard
+    const localUsers = getAllUsers();
+    const idx = localUsers.findIndex(u => u && u.email && u.email.toLowerCase() === email);
+    if (idx >= 0) {
+      localUsers[idx] = foundUser;
+    } else {
+      localUsers.push(foundUser);
+    }
+    originalSetItem('ocio_users', JSON.stringify(localUsers));
+
+    // Run full sync in the background to pull deposits/withdrawals etc.
+    // (non-blocking — don't await this so navigation isn't delayed)
+    cloudSyncFull().catch(() => {});
+
+    if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Sign In'; }
     window.location.href = 'dashboard.html';
   });
 }
