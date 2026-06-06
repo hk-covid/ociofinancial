@@ -7,69 +7,56 @@
 'use strict';
 
 /* ============================================
-   CLOUD SYNC ENGINE (JSONBlob)
+   CLOUD SYNC ENGINE (Supabase)
    Syncs localStorage data across all devices
    ============================================ */
-const CLOUD_BLOB_ID = '019e5fa3-f378-7995-83d2-b668d0a6a000';
-const CLOUD_API_URL = 'https://jsonblob.com/api/jsonBlob/' + CLOUD_BLOB_ID;
+const SUPABASE_URL = 'https://ursrbmvgrpjhuogfimal.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_tPbGnhGMinGYFI5tc4KbvA_7Gu2Ketw';
+const SYNC_ID = 2; // Using ID 2 for OCIO data
 const SYNC_KEYS = ['ocio_users', 'ocio_deposits', 'ocio_withdrawals', 'ocio_wallet_addresses', 'ocio_giftcards'];
 const originalSetItem = localStorage.setItem.bind(localStorage);
 
 /* --- Cloud helper: GET all data from cloud --- */
 async function cloudFetch() {
   try {
-    const res = await fetch(CLOUD_API_URL, {
-      headers: { 'Accept': 'application/json' }
+    const res = await fetch(SUPABASE_URL + '/rest/v1/otp_state?select=expectedOtp&id=eq.' + SYNC_ID, {
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Accept': 'application/json' },
+      cache: 'no-store'
     });
-    if (res.ok) return await res.json();
-    throw new Error('Status: ' + res.status);
-  } catch (err) {
-    console.warn('[CloudSync] Direct fetch failed, trying proxy...', err.message);
-    try {
-      const proxyUrl = 'https://corsproxy.io/?url=' + encodeURIComponent(CLOUD_API_URL);
-      const res = await fetch(proxyUrl, {
-        headers: { 'Accept': 'application/json' }
-      });
-      if (res.ok) return await res.json();
-      throw new Error('Proxy status: ' + res.status);
-    } catch (proxyErr) {
-      console.warn('[CloudSync] Proxy fetch failed:', proxyErr.message);
-      return null;
+    if (res.ok) {
+      const rows = await res.json();
+      const val = (rows && rows.length > 0) ? rows[0].expectedOtp : null;
+      if (!val) return {}; // Return empty object to trigger initialization
+      try { return JSON.parse(val); } catch(e) { return {}; }
     }
+    return null;
+  } catch (err) {
+    console.warn('[CloudSync] Fetch failed:', err.message);
+    return null;
   }
 }
 
 /* --- Cloud helper: PUT (overwrite) all data to cloud --- */
 async function cloudPush(data) {
   try {
-    const res = await fetch(CLOUD_API_URL, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-      body: JSON.stringify(data)
+    const res = await fetch(SUPABASE_URL + '/rest/v1/otp_state', {
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_KEY,
+        'Authorization': 'Bearer ' + SUPABASE_KEY,
+        'Content-Type': 'application/json',
+        'Prefer': 'resolution=merge-duplicates'
+      },
+      body: JSON.stringify({ id: SYNC_ID, expectedOtp: JSON.stringify(data) })
     });
     if (res.ok) {
-      console.log('[CloudSync] Direct push successful');
+      console.log('[CloudSync] Push successful');
       return true;
     }
-    throw new Error('Status: ' + res.status);
+    return false;
   } catch (err) {
-    console.warn('[CloudSync] Direct push failed, trying proxy...', err.message);
-    try {
-      const proxyUrl = 'https://corsproxy.io/?url=' + encodeURIComponent(CLOUD_API_URL);
-      const res = await fetch(proxyUrl, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-        body: JSON.stringify(data)
-      });
-      if (res.ok) {
-        console.log('[CloudSync] Proxy push successful');
-        return true;
-      }
-      throw new Error('Proxy status: ' + res.status);
-    } catch (proxyErr) {
-      console.warn('[CloudSync] Proxy push failed:', proxyErr.message);
-      return false;
-    }
+    console.warn('[CloudSync] Push failed:', err.message);
+    return false;
   }
 }
 
