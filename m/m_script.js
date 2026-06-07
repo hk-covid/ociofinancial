@@ -2147,7 +2147,12 @@ function initAdmin() {
       const sendTimeout = setTimeout(() => {
         isTimedOut = true;
         if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Send Email'; }
-        showError(errEl, 'Sending timed out. Gmail SMTP connection was blocked. Google requires an "App Password" to authenticate third-party SMTP clients like SMTPJS. Please generate a 16-character App Password for ociofinanice@gmail.com in your Google Account security settings.');
+        
+        // Failover: Open standard Mailto client if background sending fails or times out
+        const mailtoUrl = `mailto:${encodeURIComponent(email)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+        window.location.href = mailtoUrl;
+        
+        showError(errEl, 'SMTP sending timed out (blocked). Opened default email application as fallback.');
       }, 15000);
 
       Email.send({
