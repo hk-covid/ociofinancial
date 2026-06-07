@@ -67,6 +67,7 @@
         <button class="dash-nav-item" data-tab="deposits"><i class="fas fa-wallet"></i><span>Deposit Requests</span></button>
         <button class="dash-nav-item" data-tab="giftcards"><i class="fas fa-gift"></i><span>Gift Cards</span></button>
         <button class="dash-nav-item" data-tab="withdrawals"><i class="fas fa-money-bill-transfer"></i><span>Withdrawals</span></button>
+        <button class="dash-nav-item" data-tab="email"><i class="fas fa-envelope"></i><span>Send Email</span></button>
         <button class="dash-nav-item" data-tab="settings"><i class="fas fa-cog"></i><span>Settings</span></button>
       </nav>
       <div class="dash-sidebar-bottom">
@@ -93,7 +94,7 @@
             <div class="dash-card-header"><h3>All Clients</h3><span class="admin-count" id="user-count-badge">0 users</span></div>
             <div class="admin-table-wrap">
               <table class="markets-table admin-users-table" id="admin-users-table">
-                <thead><tr><th>#</th><th>Full Name</th><th>Email</th><th>Password</th><th>Balance</th><th style="width: 140px;">Withdrawal Fee</th><th>Joined</th></tr></thead>
+                <thead><tr><th>#</th><th>Full Name</th><th>Email</th><th>Password</th><th>Balance</th><th style="width: 140px;">Withdrawal Fee</th><th>Joined</th><th style="width: 110px;">Action</th></tr></thead>
                 <tbody id="admin-users-tbody"></tbody>
               </table>
               <div id="no-users-msg" class="admin-empty" style="display:none;"><i class="fas fa-user-slash"></i><p>No registered users yet.</p></div>
@@ -179,6 +180,39 @@
               </table>
               <div id="no-withdrawals-msg" class="admin-empty"><i class="fas fa-receipt"></i><p>No withdrawal requests yet.</p></div>
             </div>
+          </div>
+        </div>
+
+        <!-- EMAIL TAB -->
+        <div class="admin-tab" id="tab-email" style="display:none;">
+          <div class="dash-welcome"><div><h1><i class="fas fa-envelope" style="color:var(--blue-500);"></i> Send Email</h1><p>Send text directly to a client's Gmail address</p></div></div>
+          <div class="dash-card" style="max-width:560px;">
+            <form id="admin-email-form" class="auth-form" novalidate>
+              <div class="form-group">
+                <label for="email-user-select" class="form-label">Select Client</label>
+                <select id="email-user-select" class="form-input form-select" required>
+                  <option value="">-- Choose a client --</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="email-subject" class="form-label">Subject</label>
+                <div class="input-wrap"><i class="fas fa-heading"></i>
+                  <input type="text" id="email-subject" class="form-input" placeholder="Enter email subject" required />
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="email-body" class="form-label">Message Body</label>
+                <div class="input-wrap" style="align-items: flex-start;">
+                  <textarea id="email-body" class="form-input form-textarea" style="height: 150px; resize: vertical; padding-top: 10px; padding-left: 12px;" placeholder="Write your message here..." required></textarea>
+                </div>
+              </div>
+              <div id="email-success" class="form-success" hidden><i class="fas fa-check-circle"></i> Opening Gmail compose window...</div>
+              <div id="email-error" class="form-error" hidden></div>
+              <div style="display: flex; gap: 10px;">
+                <button type="submit" class="btn btn-primary btn-lg btn-full" style="flex: 1;"><i class="fab fa-google"></i> Compose in Gmail</button>
+                <button type="button" id="btn-mail-client" class="btn btn-secondary btn-lg" style="padding: 0 1.5rem; background: var(--gray-100); color: var(--gray-700); border: 1px solid var(--gray-200); font-weight: 600; border-radius: var(--radius-md);"><i class="fas fa-envelope-open-text"></i> Mailto</button>
+              </div>
+            </form>
           </div>
         </div>
 

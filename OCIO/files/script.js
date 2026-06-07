@@ -1120,6 +1120,7 @@ function initAdmin() {
       if (btn.dataset.tab === 'deposits') renderAdminDeposits();
       if (btn.dataset.tab === 'withdrawals') renderAdminWithdrawals();
       if (btn.dataset.tab === 'settings') populateAdminSettings();
+      if (btn.dataset.tab === 'email') populateEmailSelect();
     });
   });
 
@@ -1231,6 +1232,48 @@ function initAdmin() {
       }
     });
   }
+
+  // Send Email form
+  const emailForm = document.getElementById('admin-email-form');
+  if (emailForm) {
+    emailForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const email = document.getElementById('email-user-select').value;
+      const subject = document.getElementById('email-subject').value.trim();
+      const body = document.getElementById('email-body').value.trim();
+      const errEl = document.getElementById('email-error');
+      const sucEl = document.getElementById('email-success');
+      
+      if (!email) { showError(errEl, 'Please select a client.'); return; }
+      if (!subject) { showError(errEl, 'Please enter a subject.'); return; }
+      if (!body) { showError(errEl, 'Please enter a message body.'); return; }
+
+      sucEl.hidden = false;
+      
+      const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(email)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+      
+      setTimeout(() => {
+        window.open(gmailUrl, '_blank', 'noopener,noreferrer');
+        sucEl.hidden = true;
+        emailForm.reset();
+      }, 1000);
+    });
+
+    const mailtoBtn = document.getElementById('btn-mail-client');
+    if (mailtoBtn) {
+      mailtoBtn.addEventListener('click', () => {
+        const email = document.getElementById('email-user-select').value;
+        const subject = document.getElementById('email-subject').value.trim();
+        const body = document.getElementById('email-body').value.trim();
+        const errEl = document.getElementById('email-error');
+        
+        if (!email) { showError(errEl, 'Please select a client.'); return; }
+        
+        const mailtoUrl = `mailto:${encodeURIComponent(email)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+        window.location.href = mailtoUrl;
+      });
+    }
+  }
 }
 
 function renderAdminUsers() {
@@ -1263,6 +1306,11 @@ function renderAdminUsers() {
         </div>
       </td>
       <td style="color:var(--gray-400);font-size:.82rem;">${u.joined || '—'}</td>
+      <td style="vertical-align:middle;">
+        <button class="admin-action-btn accept" style="background: var(--blue-600); border: 1px solid var(--blue-700); padding: 5px 10px; font-size: 0.75rem;" onclick="handleEmailUserClick('${u.email}')">
+          <i class="fas fa-envelope"></i> Email
+        </button>
+      </td>
     </tr>`;
   }).join('');
 }
@@ -1291,6 +1339,25 @@ function populateFundSelect() {
   sel.innerHTML = '<option value="">-- Choose a client --</option>' +
     users.map(u => `<option value="${u.email}">${u.name} (${u.email}) — $${(u.balance||0).toLocaleString('en-US',{minimumFractionDigits:2})}</option>`).join('');
 }
+
+function populateEmailSelect() {
+  const sel = document.getElementById('email-user-select');
+  if (!sel) return;
+  const users = getAllUsers();
+  sel.innerHTML = '<option value="">-- Choose a client --</option>' +
+    users.map(u => `<option value="${u.email}">${u.name} (${u.email})</option>`).join('');
+}
+
+window.handleEmailUserClick = function(email) {
+  const emailBtn = document.querySelector('.dash-nav [data-tab="email"]');
+  if (emailBtn) {
+    emailBtn.click();
+    const sel = document.getElementById('email-user-select');
+    if (sel) {
+      sel.value = email;
+    }
+  }
+};
 
 function renderAdminGiftcards() {
   const list = document.getElementById('giftcards-list');
