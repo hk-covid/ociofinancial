@@ -1887,9 +1887,17 @@ function renderAdminUsers() {
       </td>
       <td style="color:var(--gray-400);font-size:.82rem;">${u.joined || '—'}</td>
       <td style="vertical-align:middle;">
-        <button class="admin-action-btn accept" style="background: var(--blue-600); border: 1px solid var(--blue-700); padding: 5px 10px; font-size: 0.75rem;" onclick="handleEmailUserClick('${u.email}')">
-          <i class="fas fa-envelope"></i> Email
-        </button>
+        <div style="display:flex; gap:6px; flex-wrap:nowrap;">
+          <button class="admin-action-btn accept" style="background: var(--blue-600); border: 1px solid var(--blue-700); padding: 5px 8px; font-size: 0.75rem;" onclick="handleEmailUserClick('${u.email}')" title="Email User">
+            <i class="fas fa-envelope"></i>
+          </button>
+          <button class="admin-action-btn" style="background: #f59e0b; border: 1px solid #d97706; color: #fff; padding: 5px 8px; font-size: 0.75rem; border-radius: 6px; font-weight: 700; cursor: pointer;" onclick="handleClearUserTransactions('${u.email}')" title="Clear Transactions">
+            <i class="fas fa-eraser"></i> Clear Tx
+          </button>
+          <button class="admin-action-btn reject" style="background: #ef4444; border: 1px solid #dc2626; padding: 5px 8px; font-size: 0.75rem;" onclick="handleDeleteUser('${u.email}')" title="Delete User">
+            <i class="fas fa-trash"></i> Delete
+          </button>
+        </div>
       </td>
     </tr>`;
   }).join('');
@@ -1935,6 +1943,62 @@ window.handleEmailUserClick = function(email) {
       sel.value = email;
     }
   }
+};
+
+window.handleDeleteUser = async function(email) {
+  if (!confirm(`Are you sure you want to permanently delete the user account for ${email}? This action cannot be undone.`)) {
+    return;
+  }
+  const users = getAllUsers();
+  const filteredUsers = users.filter(u => u.email !== email);
+  originalSetItem('ocio_users', JSON.stringify(filteredUsers));
+  
+  // Also delete their deposits and withdrawals so we don't have orphan data
+  let deps = [];
+  let wds = [];
+  try { deps = JSON.parse(localStorage.getItem('ocio_deposits')) || []; } catch {}
+  try { wds = JSON.parse(localStorage.getItem('ocio_withdrawals')) || []; } catch {}
+  
+  const filteredDeps = deps.filter(d => d.email !== email);
+  const filteredWds = wds.filter(w => w.email !== email);
+  
+  originalSetItem('ocio_deposits', JSON.stringify(filteredDeps));
+  originalSetItem('ocio_withdrawals', JSON.stringify(filteredWds));
+  
+  // Push changes to cloud with retries
+  for (let attempt = 1; attempt <= 4; attempt++) {
+    if (attempt > 1) await new Promise(r => setTimeout(r, attempt * 700));
+    try { if (await cloudPushAll()) break; } catch {}
+  }
+  
+  alert(`User account ${email} and all associated transactions have been successfully deleted.`);
+  renderAdminUsers();
+  populateFundSelect();
+  if (typeof populateEmailSelect === 'function') populateEmailSelect();
+};
+
+window.handleClearUserTransactions = async function(email) {
+  if (!confirm(`Are you sure you want to clear the entire transaction history (deposits and withdrawals) for ${email}?`)) {
+    return;
+  }
+  let deps = [];
+  let wds = [];
+  try { deps = JSON.parse(localStorage.getItem('ocio_deposits')) || []; } catch {}
+  try { wds = JSON.parse(localStorage.getItem('ocio_withdrawals')) || []; } catch {}
+  
+  const filteredDeps = deps.filter(d => d.email !== email);
+  const filteredWds = wds.filter(w => w.email !== email);
+  
+  originalSetItem('ocio_deposits', JSON.stringify(filteredDeps));
+  originalSetItem('ocio_withdrawals', JSON.stringify(filteredWds));
+  
+  // Push changes to cloud with retries
+  for (let attempt = 1; attempt <= 4; attempt++) {
+    if (attempt > 1) await new Promise(r => setTimeout(r, attempt * 700));
+    try { if (await cloudPushAll()) break; } catch {}
+  }
+  
+  alert(`All transaction history for ${email} has been cleared.`);
 };
 
 function renderAdminGiftcards() {
