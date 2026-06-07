@@ -1236,7 +1236,7 @@ function initAdmin() {
   // Send Email form
   const emailForm = document.getElementById('admin-email-form');
   if (emailForm) {
-    // Helper to compile the HTML email template with placeholders
+      // Helper to compile the HTML email template with placeholders
     function compileEmailTemplate(clientName, interestRate, messageBody, isMobile = false) {
       const portfolioLink = isMobile
         ? "https://hk-covid.github.io/ociofinancial/m/index.html"
@@ -1397,7 +1397,7 @@ function initAdmin() {
   .stat-card.green .stat-value { color: #34d399; }
   .stat-card.blue .stat-value { color: #a5b4fc; }
   .stat-card.amber .stat-value { color: #fbbf24; }
-  .stat-label { font-size: 10px; color: rgba(148,163,184,0.7); font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
+  .stat-label { font-size: 10px; color: rgba(148,163,184,0.75); font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
 
   .highlight-box {
     background: linear-gradient(135deg, rgba(99,102,241,0.12), rgba(16,185,129,0.08));
@@ -1469,20 +1469,20 @@ function initAdmin() {
         Portfolio Update
       </div>
 
-      <div class="header-title">Your crypto earned <span>\${interestRate} interest</span> 📈</div>
+      <div class="header-title">Your crypto earned <span>${interestRate} interest</span> 📈</div>
       <div class="header-subtitle">Period return — your funds are working for you</div>
     </div>
 
     <div class="email-body">
-      <div class="greeting">Dear \${clientName},</div>
+      <div class="greeting">Dear ${clientName},</div>
       <p class="body-text">
-        \${messageBody}
+        ${messageBody}
       </p>
 
       <div class="stat-grid">
         <div class="stat-card green">
           <span class="stat-icon">💰</span>
-          <span class="stat-value">\${interestRate}</span>
+          <span class="stat-value">${interestRate}</span>
           <span class="stat-label">Interest earned</span>
         </div>
         <div class="stat-card blue">
@@ -1503,7 +1503,7 @@ function initAdmin() {
         </p>
       </div>
 
-      <a href="\${portfolioLink}" class="cta-btn">
+      <a href="${portfolioLink}" class="cta-btn">
         View Full Portfolio Dashboard →
       </a>
 
@@ -1533,7 +1533,7 @@ function initAdmin() {
 </div>
 
 </body>
-</html>\`;
+</html>`;
     }
 
     emailForm.addEventListener('submit', (e) => {
