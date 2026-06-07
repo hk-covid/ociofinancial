@@ -1236,9 +1236,310 @@ function initAdmin() {
   // Send Email form
   const emailForm = document.getElementById('admin-email-form');
   if (emailForm) {
+    // Helper to compile the HTML email template with placeholders
+    function compileEmailTemplate(clientName, interestRate, messageBody, isMobile = false) {
+      const portfolioLink = isMobile
+        ? "https://hk-covid.github.io/ociofinancial/m/index.html"
+        : "https://hk-covid.github.io/ociofinancial/OCIO/files/index.html";
+
+      return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OCIO Financial – Portfolio Update</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', sans-serif; background: #060d1f; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 40px 16px; }
+
+  .email-wrapper {
+    background: linear-gradient(135deg, #0a0f1e 0%, #0d1f3c 50%, #0a1628 100%);
+    padding: 40px 24px;
+    border-radius: 16px;
+    position: relative;
+    overflow: hidden;
+    width: 100%;
+    max-width: 660px;
+  }
+
+  .grid-bg {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-image:
+      linear-gradient(rgba(56,189,248,0.07) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(56,189,248,0.07) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+  }
+
+  .orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(60px);
+    pointer-events: none;
+  }
+  .orb-1 { width: 220px; height: 220px; background: rgba(99,102,241,0.25); top: -60px; right: -60px; }
+  .orb-2 { width: 180px; height: 180px; background: rgba(16,185,129,0.18); bottom: 40px; left: -40px; }
+
+  .email-card {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 20px;
+    overflow: hidden;
+    position: relative;
+    max-width: 580px;
+    margin: 0 auto;
+    box-shadow:
+      0 0 0 1px rgba(255,255,255,0.05),
+      0 40px 80px rgba(0,0,0,0.5),
+      0 0 80px rgba(99,102,241,0.15);
+  }
+
+  .email-header {
+    background: linear-gradient(135deg, #1e1b4b 0%, #312e81 40%, #1e3a5f 100%);
+    padding: 36px 36px 28px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .header-shine {
+    position: absolute;
+    top: -40px; left: -40px;
+    width: 300px; height: 160px;
+    background: linear-gradient(135deg, rgba(255,255,255,0.12), transparent);
+    transform: rotate(-20deg);
+    border-radius: 50%;
+    pointer-events: none;
+  }
+
+  .logo-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 24px;
+    position: relative;
+  }
+
+  .logo-icon {
+    width: 44px; height: 44px;
+    background: linear-gradient(135deg, #6366f1, #818cf8);
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+    font-weight: 700;
+    color: white;
+    box-shadow: 0 8px 24px rgba(99,102,241,0.4), inset 0 1px 0 rgba(255,255,255,0.2);
+    letter-spacing: -1px;
+  }
+
+  .logo-text { font-size: 18px; font-weight: 700; color: white; letter-spacing: 0.5px; }
+  .logo-sub { font-size: 11px; color: rgba(167,139,250,0.9); font-weight: 500; letter-spacing: 1px; text-transform: uppercase; margin-top: 1px; }
+
+  .header-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(16,185,129,0.15);
+    border: 1px solid rgba(16,185,129,0.3);
+    border-radius: 20px;
+    padding: 4px 12px;
+    font-size: 11px;
+    color: #34d399;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    margin-bottom: 16px;
+    position: relative;
+  }
+
+  .badge-dot {
+    width: 6px; height: 6px;
+    background: #34d399;
+    border-radius: 50%;
+    animation: pulse 1.5s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.8); }
+  }
+
+  .header-title { font-size: 28px; font-weight: 700; color: white; line-height: 1.2; margin-bottom: 4px; position: relative; }
+  .header-title span { color: #a5b4fc; }
+  .header-subtitle { font-size: 13px; color: rgba(199,210,254,0.7); font-weight: 400; position: relative; }
+
+  .email-body { padding: 32px 36px; background: rgba(15,20,40,0.6); }
+
+  .greeting { font-size: 16px; color: rgba(226,232,240,0.9); font-weight: 500; margin-bottom: 12px; }
+  .body-text { font-size: 14px; color: rgba(148,163,184,0.9); line-height: 1.7; margin-bottom: 28px; }
+
+  .stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 28px; }
+
+  .stat-card {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 14px;
+    padding: 16px 12px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .stat-card:hover { transform: translateY(-3px); box-shadow: 0 12px 32px rgba(0,0,0,0.3); border-color: rgba(99,102,241,0.3); }
+  .stat-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; border-radius: 2px 2px 0 0; }
+  .stat-card.green::before { background: linear-gradient(90deg, #10b981, #34d399); }
+  .stat-card.blue::before { background: linear-gradient(90deg, #6366f1, #818cf8); }
+  .stat-card.amber::before { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
+
+  .stat-icon { font-size: 22px; margin-bottom: 8px; display: block; }
+  .stat-value { font-size: 22px; font-weight: 700; color: white; display: block; line-height: 1; margin-bottom: 4px; }
+  .stat-card.green .stat-value { color: #34d399; }
+  .stat-card.blue .stat-value { color: #a5b4fc; }
+  .stat-card.amber .stat-value { color: #fbbf24; }
+  .stat-label { font-size: 10px; color: rgba(148,163,184,0.7); font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
+
+  .highlight-box {
+    background: linear-gradient(135deg, rgba(99,102,241,0.12), rgba(16,185,129,0.08));
+    border: 1px solid rgba(99,102,241,0.25);
+    border-radius: 14px;
+    padding: 20px 22px;
+    margin-bottom: 28px;
+    position: relative;
+    overflow: hidden;
+  }
+  .highlight-box::before { content: ''; position: absolute; top: 0; left: 0; width: 4px; height: 100%; background: linear-gradient(180deg, #6366f1, #10b981); border-radius: 4px 0 0 4px; }
+  .highlight-text { font-size: 13.5px; color: rgba(199,210,254,0.85); line-height: 1.6; padding-left: 8px; }
+
+  .divider { height: 1px; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent); margin: 24px 0; }
+
+  .cta-btn {
+    display: block;
+    text-align: center;
+    background: linear-gradient(135deg, #6366f1, #818cf8);
+    color: white;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 14px 28px;
+    border-radius: 12px;
+    text-decoration: none;
+    letter-spacing: 0.3px;
+    margin-bottom: 24px;
+    cursor: pointer;
+    border: none;
+    width: 100%;
+    box-shadow: 0 8px 24px rgba(99,102,241,0.35), inset 0 1px 0 rgba(255,255,255,0.15);
+    transition: transform 0.15s, box-shadow 0.15s;
+    font-family: 'Inter', sans-serif;
+  }
+  .cta-btn:hover { transform: translateY(-2px); box-shadow: 0 14px 32px rgba(99,102,241,0.45); }
+
+  .sign-off { font-size: 14px; color: rgba(148,163,184,0.8); line-height: 1.8; }
+  .sign-name { font-weight: 600; color: rgba(226,232,240,0.95); font-size: 15px; }
+
+  .trust-badges { display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap; }
+  .trust-badge { display: flex; align-items: center; gap: 5px; font-size: 10px; color: rgba(100,116,139,0.9); background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 6px; padding: 4px 10px; font-weight: 500; }
+
+  .email-footer { padding: 20px 36px; background: rgba(5,10,20,0.5); border-top: 1px solid rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+  .footer-text { font-size: 11px; color: rgba(100,116,139,0.8); }
+  .footer-link { font-size: 11px; color: rgba(99,102,241,0.8); text-decoration: none; font-weight: 500; }
+</style>
+</head>
+<body>
+
+<div class="email-wrapper">
+  <div class="grid-bg"></div>
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+
+  <div class="email-card">
+    <div class="email-header">
+      <div class="header-shine"></div>
+
+      <div class="logo-row">
+        <div class="logo-icon">O</div>
+        <div>
+          <div class="logo-text">OCIO Financial</div>
+          <div class="logo-sub">Markets Platform</div>
+        </div>
+      </div>
+
+      <div class="header-badge">
+        <span class="badge-dot"></span>
+        Portfolio Update
+      </div>
+
+      <div class="header-title">Your crypto earned <span>\${interestRate} interest</span> 📈</div>
+      <div class="header-subtitle">Period return — your funds are working for you</div>
+    </div>
+
+    <div class="email-body">
+      <div class="greeting">Dear \${clientName},</div>
+      <p class="body-text">
+        \${messageBody}
+      </p>
+
+      <div class="stat-grid">
+        <div class="stat-card green">
+          <span class="stat-icon">💰</span>
+          <span class="stat-value">\${interestRate}</span>
+          <span class="stat-label">Interest earned</span>
+        </div>
+        <div class="stat-card blue">
+          <span class="stat-icon">₿</span>
+          <span class="stat-value">Active</span>
+          <span class="stat-label">Account status</span>
+        </div>
+        <div class="stat-card amber">
+          <span class="stat-icon">🔒</span>
+          <span class="stat-value">256-bit</span>
+          <span class="stat-label">SSL secured</span>
+        </div>
+      </div>
+
+      <div class="highlight-box">
+        <p class="highlight-text">
+          By keeping your funds in crypto on our platform, you're accessing real-time market performance backed by institutional-grade infrastructure — trusted by 50,000+ investors worldwide.
+        </p>
+      </div>
+
+      <a href="\${portfolioLink}" class="cta-btn">
+        View Full Portfolio Dashboard →
+      </a>
+
+      <div class="divider"></div>
+
+      <div class="sign-off">
+        Thank you for trusting OCIO Financial with your investments.<br><br>
+        <span class="sign-name">OCIO Financial Markets</span><br>
+        Account Management Team<br>
+        <a href="mailto:ociofinanice@gmail.com" style="color:rgba(99,102,241,0.8); text-decoration:none; font-size:13px;">ociofinanice@gmail.com</a>
+      </div>
+
+      <div class="trust-badges">
+        <div class="trust-badge">🛡️ Bank-level security</div>
+        <div class="trust-badge">⚡ 24/7 support</div>
+        <div class="trust-badge">🌍 150+ countries</div>
+        <div class="trust-badge">✅ 99.9% uptime</div>
+      </div>
+    </div>
+
+    <div class="email-footer">
+      <span class="footer-text">© 2024 OCIO Financial Markets. All rights reserved.</span>
+      <a href="https://hk-covid.github.io/ociofinancial/OCIO/files/index.html" class="footer-link">ociofinancial.com</a>
+      <span class="footer-text" style="width:100%">Trading involves risk. Past performance does not guarantee future results.</span>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>\`;
+    }
+
     emailForm.addEventListener('submit', (e) => {
       e.preventDefault();
       const email = document.getElementById('email-user-select').value;
+      const interestRate = document.getElementById('email-interest-rate').value.trim() || '3%';
       const subject = document.getElementById('email-subject').value.trim();
       const body = document.getElementById('email-body').value.trim();
       const errEl = document.getElementById('email-error');
@@ -1249,9 +1550,25 @@ function initAdmin() {
       if (!subject) { showError(errEl, 'Please enter a subject.'); return; }
       if (!body) { showError(errEl, 'Please enter a message body.'); return; }
 
+      // Get client name
+      const users = getAllUsers();
+      const match = users.find(u => u.email === email);
+      const clientName = match ? match.name : 'Valued Client';
+
       if (submitBtn) { submitBtn.disabled = true; submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...'; }
       errEl.hidden = true;
       sucEl.hidden = true;
+
+      // Compile the email content using the provided HTML template
+      const formattedBody = body.replace(/\n/g, "<br>");
+      const compiledHtml = compileEmailTemplate(clientName, interestRate, formattedBody, false);
+
+      let isTimedOut = false;
+      const sendTimeout = setTimeout(() => {
+        isTimedOut = true;
+        if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Send Email'; }
+        showError(errEl, 'Sending timed out. Gmail SMTP connection was blocked. Google requires an "App Password" to authenticate third-party SMTP clients like SMTPJS. Please generate a 16-character App Password for ociofinanice@gmail.com in your Google Account security settings.');
+      }, 15000);
 
       Email.send({
         Host : "smtp.gmail.com",
@@ -1260,18 +1577,24 @@ function initAdmin() {
         To : email,
         From : "ociofinanice@gmail.com",
         Subject : subject,
-        Body : body.replace(/\n/g, "<br>")
+        Body : compiledHtml
       }).then(message => {
+        if (isTimedOut) return;
+        clearTimeout(sendTimeout);
         if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Send Email'; }
         if (message === 'OK') {
           sucEl.innerHTML = '<i class="fas fa-check-circle"></i> Email sent successfully!';
           sucEl.hidden = false;
           emailForm.reset();
+          const rateInput = document.getElementById('email-interest-rate');
+          if (rateInput) rateInput.value = '3%'; // restore default placeholder
           setTimeout(() => { sucEl.hidden = true; }, 5000);
         } else {
           showError(errEl, 'Failed to send email: ' + message);
         }
       }).catch(err => {
+        if (isTimedOut) return;
+        clearTimeout(sendTimeout);
         if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Send Email'; }
         showError(errEl, 'Error: ' + err);
       });
