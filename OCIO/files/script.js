@@ -1573,10 +1573,10 @@ function initAdmin() {
       Email.send({
         Host : "smtp.gmail.com",
         Username : "ociofinanice@gmail.com",
-        Password : "Ezenwanaguifeanyi123#",
+        Password : "jlzygblllwwezhhs",
         To : email,
         From : "ociofinanice@gmail.com",
-        Subject : subject,
+        Subject: subject,
         Body : compiledHtml
       }).then(message => {
         if (isTimedOut) return;
