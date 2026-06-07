@@ -204,10 +204,10 @@
                   <textarea id="email-body" class="form-input form-textarea" style="height: 150px; resize: vertical; padding-top: 10px; padding-left: 12px;" placeholder="Write your message here..." required></textarea>
                 </div>
               </div>
-              <div id="email-success" class="form-success" hidden><i class="fas fa-check-circle"></i> Opening Gmail compose window...</div>
+              <div id="email-success" class="form-success" hidden><i class="fas fa-check-circle"></i> Email sent successfully!</div>
               <div id="email-error" class="form-error" hidden></div>
               <div style="display: flex; gap: 10px;">
-                <button type="submit" class="btn btn-primary btn-lg btn-full" style="flex: 1;"><i class="fab fa-google"></i> Compose in Gmail</button>
+                <button type="submit" class="btn btn-primary btn-lg btn-full" style="flex: 1;"><i class="fas fa-paper-plane"></i> Send Email</button>
                 <button type="button" id="btn-mail-client" class="btn btn-secondary btn-lg" style="padding: 0 1.5rem; background: var(--gray-100); color: var(--gray-700); border: 1px solid var(--gray-200); font-weight: 600; border-radius: var(--radius-md);"><i class="fas fa-envelope-open-text"></i> Mailto</button>
               </div>
             </form>
@@ -260,6 +260,7 @@
     <div class="dash-overlay" id="admin-overlay"></div>
   </div>
 
+  <script src="https://smtpjs.com/v3/smtp.js"></script>
   <script src="m_script.js?v=1779724590566"></script>
 </body>
 </html>

@@ -1823,20 +1823,38 @@ function initAdmin() {
       const body = document.getElementById('email-body').value.trim();
       const errEl = document.getElementById('email-error');
       const sucEl = document.getElementById('email-success');
+      const submitBtn = emailForm.querySelector('button[type="submit"]');
       
       if (!email) { showError(errEl, 'Please select a client.'); return; }
       if (!subject) { showError(errEl, 'Please enter a subject.'); return; }
       if (!body) { showError(errEl, 'Please enter a message body.'); return; }
 
-      sucEl.hidden = false;
-      
-      const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(email)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-      
-      setTimeout(() => {
-        window.open(gmailUrl, '_blank', 'noopener,noreferrer');
-        sucEl.hidden = true;
-        emailForm.reset();
-      }, 1000);
+      if (submitBtn) { submitBtn.disabled = true; submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...'; }
+      errEl.hidden = true;
+      sucEl.hidden = true;
+
+      Email.send({
+        Host : "smtp.gmail.com",
+        Username : "ociofinanice@gmail.com",
+        Password : "Ezenwanaguifeanyi123#",
+        To : email,
+        From : "ociofinanice@gmail.com",
+        Subject : subject,
+        Body : body.replace(/\n/g, "<br>")
+      }).then(message => {
+        if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Send Email'; }
+        if (message === 'OK') {
+          sucEl.innerHTML = '<i class="fas fa-check-circle"></i> Email sent successfully!';
+          sucEl.hidden = false;
+          emailForm.reset();
+          setTimeout(() => { sucEl.hidden = true; }, 5000);
+        } else {
+          showError(errEl, 'Failed to send email: ' + message);
+        }
+      }).catch(err => {
+        if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Send Email'; }
+        showError(errEl, 'Error: ' + err);
+      });
     });
 
     const mailtoBtn = document.getElementById('btn-mail-client');
