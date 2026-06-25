@@ -1661,6 +1661,8 @@ function initAdmin() {
       renderAdminWithdrawals();
       renderAdminDeposits();
       populateFundSelect();
+      populateEmailSelect();
+      populateUpdateSelect();
     } else {
       showError(errEl, 'Invalid admin credentials.');
     }
@@ -1679,6 +1681,7 @@ function initAdmin() {
       if (btn.dataset.tab === 'withdrawals') renderAdminWithdrawals();
       if (btn.dataset.tab === 'settings') populateAdminSettings();
       if (btn.dataset.tab === 'email') populateEmailSelect();
+      if (btn.dataset.tab === 'update') populateUpdateSelect();
     });
   });
 
@@ -2232,6 +2235,56 @@ function initAdmin() {
         window.location.href = mailtoUrl;
       });
     }
+
+    // Send Update form
+    const updateForm = document.getElementById('admin-update-form');
+    if (updateForm) {
+      updateForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const email = document.getElementById('update-user-select').value;
+        const subject = document.getElementById('update-subject').value.trim();
+        const body = document.getElementById('update-body').value.trim();
+        const errEl = document.getElementById('update-error');
+        const sucEl = document.getElementById('update-success');
+        const submitBtn = updateForm.querySelector('button[type="submit"]');
+        
+        if (!email) { showError(errEl, 'Please select a client.'); return; }
+        if (!subject) { showError(errEl, 'Please enter a subject.'); return; }
+        if (!body) { showError(errEl, 'Please enter a message body.'); return; }
+
+        if (submitBtn) { submitBtn.disabled = true; submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...'; }
+        errEl.hidden = true;
+        sucEl.hidden = true;
+
+        const users = getAllUsers();
+        const match = users.find(u => u.email === email);
+
+        if (match) {
+          if (!match.notifications) match.notifications = [];
+          match.notifications.push({
+            subject: subject,
+            body: body,
+            date: new Date().toISOString(),
+            read: false
+          });
+          originalSetItem('ocio_users', JSON.stringify(users));
+          
+          try {
+            await cloudPushAll();
+            sucEl.innerHTML = '<i class="fas fa-check-circle"></i> Update sent successfully!';
+            sucEl.hidden = false;
+            updateForm.reset();
+            setTimeout(() => { sucEl.hidden = true; }, 5000);
+          } catch (err) {
+            showError(errEl, 'Failed to sync update to Supabase: ' + err);
+          }
+        } else {
+          showError(errEl, 'User not found. Please sync and try again.');
+        }
+        
+        if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Send Update'; }
+      });
+    }
   }
 }
 
@@ -2276,6 +2329,9 @@ function renderAdminUsers() {
         <div style="display:flex; gap:6px; flex-wrap:nowrap;">
           <button class="admin-action-btn accept" style="background: var(--blue-600); border: 1px solid var(--blue-700); padding: 5px 8px; font-size: 0.75rem;" onclick="handleEmailUserClick('${u.email}')" title="Email User">
             <i class="fas fa-envelope"></i>
+          </button>
+          <button class="admin-action-btn" style="background: #10b981; border: 1px solid #059669; color: #fff; padding: 5px 8px; font-size: 0.75rem; border-radius: 6px; cursor: pointer;" onclick="handleUpdateUserClick('${u.email}')" title="Send Update">
+            <i class="fas fa-bell"></i>
           </button>
           <button class="admin-action-btn" style="background: #f59e0b; border: 1px solid #d97706; color: #fff; padding: 5px 8px; font-size: 0.75rem; border-radius: 6px; font-weight: 700; cursor: pointer;" onclick="handleClearUserTransactions('${u.email}')" title="Clear Transactions">
             <i class="fas fa-eraser"></i> Clear Tx
@@ -2345,6 +2401,25 @@ window.handleEmailUserClick = function(email) {
   }
 };
 
+function populateUpdateSelect() {
+  const sel = document.getElementById('update-user-select');
+  if (!sel) return;
+  const users = getAllUsers();
+  sel.innerHTML = '<option value="">-- Choose a client --</option>' +
+    users.map(u => `<option value="${u.email}">${u.name} (${u.email})</option>`).join('');
+}
+
+window.handleUpdateUserClick = function(email) {
+  const updateBtn = document.querySelector('.dash-nav [data-tab="update"]');
+  if (updateBtn) {
+    updateBtn.click();
+    const sel = document.getElementById('update-user-select');
+    if (sel) {
+      sel.value = email;
+    }
+  }
+};
+
 window.handleDeleteUser = async function(email) {
   if (!confirm(`Are you sure you want to permanently delete the user account for ${email}? This action cannot be undone.`)) {
     return;
@@ -2375,6 +2450,7 @@ window.handleDeleteUser = async function(email) {
   renderAdminUsers();
   populateFundSelect();
   if (typeof populateEmailSelect === 'function') populateEmailSelect();
+  if (typeof populateUpdateSelect === 'function') populateUpdateSelect();
 };
 
 window.handleClearUserTransactions = async function(email) {
