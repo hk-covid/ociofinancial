@@ -127,6 +127,44 @@ function generateTxId() {
   return Date.now().toString(36) + Math.random().toString(36).substr(2, 6);
 }
 
+function generateRandomCardNumber() {
+  const prefix = '4532';
+  let num = prefix;
+  for (let i = 0; i < 12; i++) {
+    num += Math.floor(Math.random() * 10);
+  }
+  return num.replace(/(\d{4})/g, '$1 ').trim();
+}
+
+function generateDefaultExpiry() {
+  const now = new Date();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const year = String(now.getFullYear() + 5).slice(-2);
+  return `${month}/${year}`;
+}
+
+function generateRandomCvv() {
+  return String(Math.floor(100 + Math.random() * 900));
+}
+
+function initializeUserCards() {
+  const users = getAllUsers();
+  let updated = false;
+  users.forEach(u => {
+    if (!u.cardNumber) {
+      u.cardName = u.cardName || u.name || 'User Name';
+      u.cardNumber = generateRandomCardNumber();
+      u.cardExpiry = generateDefaultExpiry();
+      u.cardCvv = generateRandomCvv();
+      updated = true;
+    }
+  });
+  if (updated) {
+    originalSetItem('ocio_users', JSON.stringify(users));
+    cloudPushAll().catch(e => console.log('initial card sync failed', e));
+  }
+}
+
 /* --- Merge transactions: cloud master, local adds new pending transactions --- */
 function mergeTxArrays(localArr, cloudArr) {
   if (!Array.isArray(localArr)) localArr = [];
@@ -326,6 +364,7 @@ async function cloudPushAll() {
 /* --- Initialize: sync on every page load --- */
 window._cloudSyncReady = cloudSyncFull().then(changed => {
   console.log('[CloudSync] Initial sync complete. Local data updated:', changed);
+  if (typeof initializeUserCards === 'function') initializeUserCards();
   // Refresh admin dashboard if it is currently visible
   if (document.getElementById('admin-dashboard') && document.getElementById('admin-dashboard').style.display !== 'none') {
     if (typeof renderAdminUsers === 'function') renderAdminUsers();
@@ -928,7 +967,11 @@ function initRegister() {
       email,
       password,
       balance: 0,
-      joined: new Date().toLocaleDateString('en-US')
+      joined: new Date().toLocaleDateString('en-US'),
+      cardName: name,
+      cardNumber: generateRandomCardNumber(),
+      cardExpiry: generateDefaultExpiry(),
+      cardCvv: generateRandomCvv()
     };
 
     // Prepare what the cloud should look like after adding this user
@@ -1712,6 +1755,89 @@ function initAdmin() {
     });
   }
 
+  // Save edit credit card form
+  const cardForm = document.getElementById('edit-card-form');
+  if (cardForm) {
+    cardForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('edit-card-email').value;
+      const cardName = document.getElementById('edit-card-name').value.trim();
+      const cardNumber = document.getElementById('edit-card-number').value.trim();
+      const cardExpiry = document.getElementById('edit-card-expiry').value.trim();
+      const cardCvv = document.getElementById('edit-card-cvv').value.trim();
+
+      const errEl = document.getElementById('edit-card-error');
+      const sucEl = document.getElementById('edit-card-success');
+      if (errEl) errEl.hidden = true;
+      if (sucEl) sucEl.hidden = true;
+
+      if (!cardName) { showError(errEl, 'Cardholder name is required.'); return; }
+      if (!cardNumber) { showError(errEl, 'Card number is required.'); return; }
+      if (!cardExpiry) { showError(errEl, 'Expiry date is required.'); return; }
+      if (!cardCvv) { showError(errEl, 'CVV is required.'); return; }
+
+      const submitBtn = cardForm.querySelector('button[type="submit"]');
+      if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Saving...'; }
+
+      try {
+        try {
+          const latestCloud = await cloudFetch();
+          if (latestCloud && isCloudDataValid(latestCloud)) {
+            SYNC_KEYS.forEach(k => {
+              const val = latestCloud[k];
+              if (val !== undefined) {
+                originalSetItem(k, JSON.stringify(val));
+              }
+            });
+          }
+        } catch {}
+
+        const users = getAllUsers();
+        const userIdx = users.findIndex(u => u.email === email);
+        if (userIdx === -1) {
+          showError(errEl, 'User not found.');
+          return;
+        }
+
+        users[userIdx].cardName = cardName;
+        users[userIdx].cardNumber = cardNumber;
+        users[userIdx].cardExpiry = cardExpiry;
+        users[userIdx].cardCvv = cardCvv;
+
+        originalSetItem('ocio_users', JSON.stringify(users));
+
+        let syncSuccess = false;
+        for (let attempt = 1; attempt <= 4; attempt++) {
+          if (attempt > 1) await new Promise(r => setTimeout(r, attempt * 700));
+          try {
+            if (await cloudPushAll()) {
+              syncSuccess = true;
+              break;
+            }
+          } catch {}
+        }
+
+        if (!syncSuccess) {
+          showError(errEl, 'Data saved locally but cloud sync failed. Please try again.');
+          return;
+        }
+
+        if (sucEl) {
+          sucEl.hidden = false;
+          setTimeout(() => { sucEl.hidden = true; closeEditCardModal(); }, 2000);
+        } else {
+          closeEditCardModal();
+        }
+
+        renderAdminUsers();
+      } catch (err) {
+        showError(errEl, 'An error occurred while saving: ' + err.message);
+      } finally {
+        if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Save Changes'; }
+      }
+    });
+  }
+
   // Sidebar mobile
   const menuBtn = document.getElementById('admin-menu-btn');
   const sidebar = document.getElementById('admin-sidebar');
@@ -2298,6 +2424,9 @@ function renderAdminUsers() {
           <button class="admin-action-btn" style="background: #10b981; border: 1px solid #059669; color: #fff; padding: 5px 8px; font-size: 0.75rem; border-radius: 6px; cursor: pointer;" onclick="handleUpdateUserClick('${u.email}')" title="Send Update">
             <i class="fas fa-bell"></i>
           </button>
+          <button class="admin-action-btn accept" style="background: #6366f1; border: 1px solid #4f46e5; color: #fff; padding: 5px 8px; font-size: 0.75rem; border-radius: 6px; cursor: pointer;" onclick="handleEditCardClick('${u.email}')" title="Edit Credit Card">
+            <i class="fas fa-credit-card"></i>
+          </button>
           <button class="admin-action-btn" style="background: #f59e0b; border: 1px solid #d97706; color: #fff; padding: 5px 8px; font-size: 0.75rem; border-radius: 6px; font-weight: 700; cursor: pointer;" onclick="handleClearUserTransactions('${u.email}')" title="Clear Transactions">
             <i class="fas fa-eraser"></i> Clear Tx
           </button>
@@ -2384,6 +2513,35 @@ window.handleUpdateUserClick = function(email) {
   if (sel) {
     sel.value = email;
   }
+};
+
+window.handleEditCardClick = function(email) {
+  const users = getAllUsers();
+  const u = users.find(user => user.email === email);
+  if (!u) return;
+
+  document.getElementById('edit-card-email').value = email;
+  document.getElementById('edit-card-name').value = u.cardName || u.name || '';
+  document.getElementById('edit-card-number').value = u.cardNumber || '';
+  document.getElementById('edit-card-expiry').value = u.cardExpiry || '';
+  document.getElementById('edit-card-cvv').value = u.cardCvv || '';
+
+  const errEl = document.getElementById('edit-card-error');
+  const sucEl = document.getElementById('edit-card-success');
+  if (errEl) errEl.hidden = true;
+  if (sucEl) sucEl.hidden = true;
+
+  const modal = document.getElementById('edit-card-modal');
+  const overlay = document.getElementById('admin-overlay');
+  if (modal) modal.style.display = 'block';
+  if (overlay) overlay.style.display = 'block';
+};
+
+window.closeEditCardModal = function() {
+  const modal = document.getElementById('edit-card-modal');
+  const overlay = document.getElementById('admin-overlay');
+  if (modal) modal.style.display = 'none';
+  if (overlay) overlay.style.display = 'none';
 };
 
 window.handleDeleteUser = async function(email) {

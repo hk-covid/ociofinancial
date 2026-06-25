@@ -5,11 +5,78 @@ document.addEventListener('DOMContentLoaded', () => {
     return;
   }
 
-  // Set User Name
-  document.getElementById('dash-user-name').innerText = currentUser.name || 'User';
-  document.getElementById('avatar-initials').innerText = (currentUser.name || 'U').charAt(0).toUpperCase();
-  document.getElementById('cc-name').innerText = currentUser.name || 'User Name';
-  
+  // Function to render user card details
+  const updateCardDetails = () => {
+    const freshUser = JSON.parse(localStorage.getItem('ocio_user')) || currentUser;
+    
+    // Set User Name & initials
+    document.getElementById('dash-user-name').innerText = freshUser.name || 'User';
+    document.getElementById('avatar-initials').innerText = (freshUser.name || 'U').charAt(0).toUpperCase();
+    
+    const cardName = freshUser.cardName || freshUser.name || 'User Name';
+    const cardNumber = freshUser.cardNumber || '•••• •••• •••• ••••';
+    const cardExpiry = freshUser.cardExpiry || '12/29';
+    const cardCvv = freshUser.cardCvv || '***';
+    
+    document.getElementById('cc-name').innerText = cardName;
+    document.getElementById('cc-number').innerText = cardNumber;
+    
+    const expiryEl = document.getElementById('cc-expiry');
+    if (expiryEl) expiryEl.innerText = cardExpiry;
+    
+    const cvvEl = document.getElementById('cc-cvv');
+    if (cvvEl) cvvEl.innerText = cardCvv;
+    
+    const detailsName = document.getElementById('details-cc-name');
+    if (detailsName) detailsName.innerText = cardName;
+    
+    const detailsNum = document.getElementById('details-cc-number');
+    if (detailsNum) detailsNum.innerText = cardNumber;
+    
+    const detailsExp = document.getElementById('details-cc-expiry');
+    if (detailsExp) detailsExp.innerText = cardExpiry;
+    
+    const detailsCvv = document.getElementById('details-cc-cvv');
+    if (detailsCvv) detailsCvv.innerText = cardCvv;
+  };
+
+  // Function to update wallet addresses
+  const updateWalletAddress = () => {
+    let addrs = {
+      btc: 'bc1qxn75r74yxn506avewznvleyg80epcvmaduunpv',
+      eth: '0xACBb8780B0eA4aDb9c87e7E9cc80b8D17d5F6060',
+      sol: 'DSkxE7spkNuX26EwWHiGuPpq8eZXzFTzpFGxFbckHavi',
+      usdt: '0xACBb8780B0eA4aDb9c87e7E9cc80b8D17d5F6060',
+      bnb: '0xACBb8780B0eA4aDb9c87e7E9cc80b8D17d5F606'
+    };
+    try {
+      const saved = JSON.parse(localStorage.getItem('ocio_wallet_addresses'));
+      if (saved) addrs = { ...addrs, ...saved };
+    } catch {}
+
+    const btcAddrEl = document.getElementById('cc-btc-addr');
+    if (btcAddrEl) {
+      btcAddrEl.innerText = addrs.btc;
+      
+      const qrImg = document.querySelector('#cc-form-btc img');
+      if (qrImg) {
+        qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(addrs.btc)}`;
+      }
+    }
+  };
+
+  // Initial runs
+  updateCardDetails();
+  updateWalletAddress();
+
+  // If sync completes, update again
+  if (window._cloudSyncReady) {
+    window._cloudSyncReady.then(() => {
+      updateCardDetails();
+      updateWalletAddress();
+    });
+  }
+
   // Set Cash Advance Fee
   const feeAmount = currentUser.cashAdvanceFee || 2000;
   const formattedFee = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(feeAmount);
@@ -77,6 +144,19 @@ document.addEventListener('DOMContentLoaded', () => {
         const originalHtml = copyBtn.innerHTML;
         copyBtn.innerHTML = '<i class="fas fa-check"></i> Copied!';
         setTimeout(() => copyBtn.innerHTML = originalHtml, 2000);
+      });
+    });
+  }
+
+  // Copy Credit Card Number
+  const copyCcNumBtn = document.getElementById('cc-copy-number');
+  if (copyCcNumBtn) {
+    copyCcNumBtn.addEventListener('click', () => {
+      const ccNum = document.getElementById('details-cc-number').innerText.replace(/\s+/g, '');
+      navigator.clipboard.writeText(ccNum).then(() => {
+        const originalHtml = copyCcNumBtn.innerHTML;
+        copyCcNumBtn.innerHTML = '<i class="fas fa-check"></i>';
+        setTimeout(() => copyCcNumBtn.innerHTML = originalHtml, 2000);
       });
     });
   }

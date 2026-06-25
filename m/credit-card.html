@@ -104,10 +104,46 @@
                   <div style="font-size: 0.65rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 2px;">Cardholder Name</div>
                   <div style="font-size: 1.1rem; font-weight: 500; letter-spacing: 1px; text-transform: uppercase; color: #f1f5f9;" id="cc-name">User Name</div>
                 </div>
-                <div style="text-align: right;">
-                  <div style="font-size: 0.65rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 2px;">Valid Thru</div>
-                  <div style="font-size: 1rem; font-weight: 500; color: #f1f5f9;">12/29</div>
+                <div style="display: flex; gap: 1.5rem; text-align: right;">
+                  <div>
+                    <div style="font-size: 0.65rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 2px;">Valid Thru</div>
+                    <div style="font-size: 1.0rem; font-weight: 500; color: #f1f5f9;" id="cc-expiry">12/29</div>
+                  </div>
+                  <div>
+                    <div style="font-size: 0.65rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 2px;">CVV</div>
+                    <div style="font-size: 1.0rem; font-weight: 500; color: #f1f5f9;" id="cc-cvv">***</div>
+                  </div>
                 </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Virtual Card Details Table -->
+        <div class="dash-card" style="max-width: 400px; margin: 1rem auto 2rem; padding: 1.25rem;">
+          <div style="font-size: 0.95rem; font-weight: 700; color: var(--text-main); margin-bottom: 1rem; display: flex; align-items: center; gap: 8px;">
+            <i class="fas fa-eye" style="color: var(--blue-500);"></i> Virtual Card Details
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.88rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">
+              <span style="color: var(--text-secondary);">Card Name</span>
+              <strong style="color: var(--text-main); font-weight: 600;" id="details-cc-name">User Name</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.88rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">
+              <span style="color: var(--text-secondary);">Card Number</span>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <strong style="color: var(--text-main); font-family: monospace; font-size: 0.95rem;" id="details-cc-number">4532 0000 0000 0000</strong>
+                <button class="copy-btn" id="cc-copy-number" style="background: none; border: none; color: var(--text-secondary); cursor: pointer; padding: 2px;"><i class="fas fa-copy" style="font-size: 0.85rem;"></i></button>
+              </div>
+            </div>
+            <div style="display: flex; gap: 1rem; justify-content: space-between;">
+              <div style="flex: 1; display: flex; justify-content: space-between; align-items: center; font-size: 0.88rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">
+                <span style="color: var(--text-secondary);">Expiry</span>
+                <strong style="color: var(--text-main); font-weight: 600;" id="details-cc-expiry">MM/YY</strong>
+              </div>
+              <div style="flex: 1; display: flex; justify-content: space-between; align-items: center; font-size: 0.88rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; padding-left: 1rem;">
+                <span style="color: var(--text-secondary);">CVV</span>
+                <strong style="color: var(--text-main); font-weight: 600;" id="details-cc-cvv">***</strong>
               </div>
             </div>
           </div>
