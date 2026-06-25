@@ -521,6 +521,15 @@ function initMobileMenu() {
 function initScrollAnimations() {
   const items = document.querySelectorAll('[data-animate]');
   if (!items.length) return;
+
+  if (!window.IntersectionObserver) {
+    items.forEach(el => {
+      const delay = parseInt(el.dataset.delay ?? 0, 10);
+      setTimeout(() => { el.classList.add('visible'); }, delay);
+    });
+    return;
+  }
+
   const observer = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
       if (!entry.isIntersecting) return;
@@ -596,6 +605,17 @@ function animateCounter(el, target, duration = 1800) {
 
 function initCounters() {
   const stats = document.querySelectorAll('.stat-number');
+  if (!stats.length) return;
+
+  if (!window.IntersectionObserver) {
+    stats.forEach(el => {
+      const raw = el.textContent.replace(/[^0-9.]/g, '');
+      const val = parseFloat(raw);
+      if (!isNaN(val)) animateCounter(el, val);
+    });
+    return;
+  }
+
   const observer = new IntersectionObserver(entries => {
     entries.forEach(entry => {
       if (!entry.isIntersecting) return;

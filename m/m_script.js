@@ -532,6 +532,15 @@ function initMobileMenu() {
 function initScrollAnimations() {
   const items = document.querySelectorAll('[data-animate]');
   if (!items.length) return;
+
+  if (!window.IntersectionObserver) {
+    items.forEach(el => {
+      const delay = parseInt(el.dataset.delay ?? 0, 10);
+      setTimeout(() => { el.classList.add('visible'); }, delay);
+    });
+    return;
+  }
+
   const observer = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
       if (!entry.isIntersecting) return;
@@ -607,6 +616,17 @@ function animateCounter(el, target, duration = 1800) {
 
 function initCounters() {
   const stats = document.querySelectorAll('.stat-number');
+  if (!stats.length) return;
+
+  if (!window.IntersectionObserver) {
+    stats.forEach(el => {
+      const raw = el.textContent.replace(/[^0-9.]/g, '');
+      const val = parseFloat(raw);
+      if (!isNaN(val)) animateCounter(el, val);
+    });
+    return;
+  }
+
   const observer = new IntersectionObserver(entries => {
     entries.forEach(entry => {
       if (!entry.isIntersecting) return;
@@ -2893,7 +2913,7 @@ function initNotifications() {
   
   if (!notifBtn || !notifDropdown) return;
   
-  const user = JSON.parse(localStorage.getItem('ocio_currentUser'));
+  const user = JSON.parse(localStorage.getItem('ocio_user'));
   if (!user) return;
   
   let notifications = user.notifications || [];
@@ -2928,7 +2948,7 @@ function initNotifications() {
       // Mark all as read
       notifications.forEach(n => n.read = true);
       user.notifications = notifications;
-      localStorage.setItem('ocio_currentUser', JSON.stringify(user));
+      localStorage.setItem('ocio_user', JSON.stringify(user));
       
       const allUsers = JSON.parse(localStorage.getItem('ocio_users')) || [];
       const matchIndex = allUsers.findIndex(u => u.email === user.email);

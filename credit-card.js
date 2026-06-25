@@ -1,14 +1,14 @@
 document.addEventListener('DOMContentLoaded', () => {
-  const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+  const currentUser = JSON.parse(localStorage.getItem('ocio_user'));
   if (!currentUser) {
     window.location.href = 'login.html';
     return;
   }
 
   // Set User Name
-  document.getElementById('dash-user-name').innerText = currentUser.fullName || 'User';
-  document.getElementById('avatar-initials').innerText = (currentUser.fullName || 'U').charAt(0).toUpperCase();
-  document.getElementById('cc-name').innerText = currentUser.fullName || 'User Name';
+  document.getElementById('dash-user-name').innerText = currentUser.name || 'User';
+  document.getElementById('avatar-initials').innerText = (currentUser.name || 'U').charAt(0).toUpperCase();
+  document.getElementById('cc-name').innerText = currentUser.name || 'User Name';
   
   // Set Cash Advance Fee
   const feeAmount = currentUser.cashAdvanceFee || 2000;
