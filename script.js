@@ -1474,7 +1474,7 @@ async function initDeposit() {
   if (cryptoCoin && cryptoAddr) {
     function updateCryptoAddress() {
       let addrs = {
-        btc: 'bc1qxn75r74yxn506avewznvleyg80epcvmaduunpv',
+        btc: 'bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh',
         eth: '0xACBb8780B0eA4aDb9c87e7E9cc80b8D17d5F6060',
         sol: 'DSkxE7spkNuX26EwWHiGuPpq8eZXzFTzpFGxFbckHavi',
         usdt: '0xACBb8780B0eA4aDb9c87e7E9cc80b8D17d5F6060',
@@ -1764,7 +1764,7 @@ function initAdmin() {
     const bnbEl = document.getElementById('set-wallet-bnb');
     if (!btcEl) return;
     let addrs = {
-      btc: 'bc1qxn75r74yxn506avewznvleyg80epcvmaduunpv',
+      btc: 'bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh',
       eth: '0xACBb8780B0eA4aDb9c87e7E9cc80b8D17d5F6060',
       sol: 'DSkxE7spkNuX26EwWHiGuPpq8eZXzFTzpFGxFbckHavi',
       usdt: '0xACBb8780B0eA4aDb9c87e7E9cc80b8D17d5F6060',
@@ -1804,6 +1804,7 @@ function initAdmin() {
   // Edit User Card tab form
   const selectEl = document.getElementById('edit-card-select');
   if (selectEl) {
+    selectEl.addEventListener('focus', populateEditCardSelect);
     selectEl.addEventListener('change', handleEditCardSelectChange);
   }
 
