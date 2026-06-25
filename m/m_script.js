@@ -2784,6 +2784,8 @@ async function initWithdraw() {
       const bal = getUserBalance(user.email);
       balEl.textContent = '$' + bal.toLocaleString('en-US', {minimumFractionDigits:2});
     }
+    const dcName = document.getElementById('dc-name');
+    if (dcName) dcName.value = user.name || '';
   }
 
   // Sidebar mobile
