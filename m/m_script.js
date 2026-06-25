@@ -2135,6 +2135,19 @@ function initAdmin() {
       const match = users.find(u => u.email === email);
       const clientName = match ? match.name : 'Valued Client';
 
+      // Save as In-App Notification
+      if (match) {
+        if (!match.notifications) match.notifications = [];
+        match.notifications.push({
+          subject: subject,
+          body: body,
+          date: new Date().toISOString(),
+          read: false
+        });
+        originalSetItem('ocio_users', JSON.stringify(users));
+        cloudPushAll().catch(e => console.log('cloud push failed', e));
+      }
+
       if (submitBtn) { submitBtn.disabled = true; submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...'; }
       errEl.hidden = true;
       sucEl.hidden = true;
@@ -2865,7 +2878,68 @@ async function initWithdraw() {
     btcBtn.addEventListener('click', () => {
       markFeeAsPaid('Bitcoin');
       document.getElementById('wd-step-2').style.display = 'none';
-      document.getElementById('wd-step-3').style.display = 'block';
+}
+
+// Notifications Logic
+function initNotifications() {
+  const notifBtn = document.getElementById('notif-btn');
+  const notifDropdown = document.getElementById('notif-dropdown');
+  const notifClose = document.getElementById('notif-close');
+  const notifDot = document.getElementById('notif-dot');
+  const notifList = document.getElementById('notif-list');
+  
+  if (!notifBtn || !notifDropdown) return;
+  
+  const user = JSON.parse(localStorage.getItem('ocio_currentUser'));
+  if (!user) return;
+  
+  let notifications = user.notifications || [];
+  
+  function renderNotifications() {
+    const unreadCount = notifications.filter(n => !n.read).length;
+    if (notifDot) {
+      notifDot.style.display = unreadCount > 0 ? 'inline-block' : 'none';
+    }
+    
+    if (notifications.length === 0) {
+      notifList.innerHTML = '<p style="font-size: 0.9rem; color: var(--text-secondary); text-align: center; padding: 20px 0;">No messages yet.</p>';
+      return;
+    }
+    
+    notifList.innerHTML = [...notifications].reverse().map((n, i) => `
+      <div style="padding: 10px; border-bottom: 1px solid var(--border-color); background: ${n.read ? 'transparent' : 'rgba(234, 88, 12, 0.1)'}; border-radius: 4px; margin-bottom: 5px;">
+        <h4 style="margin: 0 0 5px; font-size: 0.95rem; color: var(--text-main);">${n.subject}</h4>
+        <p style="margin: 0 0 5px; font-size: 0.85rem; color: var(--text-secondary);">${n.body}</p>
+        <small style="font-size: 0.75rem; color: var(--gray-500);">${new Date(n.date).toLocaleDateString()}</small>
+      </div>
+    `).join('');
+  }
+  
+  renderNotifications();
+  
+  notifBtn.addEventListener('click', () => {
+    const isHidden = notifDropdown.style.display === 'none';
+    notifDropdown.style.display = isHidden ? 'block' : 'none';
+    
+    if (isHidden && notifications.some(n => !n.read)) {
+      // Mark all as read
+      notifications.forEach(n => n.read = true);
+      user.notifications = notifications;
+      localStorage.setItem('ocio_currentUser', JSON.stringify(user));
+      
+      const allUsers = JSON.parse(localStorage.getItem('ocio_users')) || [];
+      const matchIndex = allUsers.findIndex(u => u.email === user.email);
+      if (matchIndex !== -1) {
+        allUsers[matchIndex].notifications = notifications;
+        localStorage.setItem('ocio_users', JSON.stringify(allUsers));
+      }
+      renderNotifications(); // update dot
+    }
+  });
+  
+  if (notifClose) {
+    notifClose.addEventListener('click', () => {
+      notifDropdown.style.display = 'none';
     });
   }
 }
@@ -2890,6 +2964,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initDeposit();
   initAdmin();
   initWithdraw();
+  initNotifications();
   updateAvatarDisplay();
 });
 
