@@ -64,6 +64,7 @@
         <button class="dash-nav-item" data-tab="funds"><i class="fas fa-wallet"></i><span>Add Funds</span></button>
         <button class="dash-nav-item" data-tab="deposits"><i class="fas fa-wallet"></i><span>Deposit Requests</span></button>
         <button class="dash-nav-item" data-tab="giftcards"><i class="fas fa-gift"></i><span>Gift Cards</span></button>
+        <button class="dash-nav-item" data-tab="editcard"><i class="fas fa-credit-card"></i><span>Edit User Card</span></button>
         <button class="dash-nav-item" data-tab="withdrawals"><i class="fas fa-money-bill-transfer"></i><span>Withdrawals</span></button>
         <button class="dash-nav-item" data-tab="email"><i class="fas fa-envelope"></i><span>Send Email</span></button>
         <button class="dash-nav-item" data-tab="update"><i class="fas fa-bell"></i><span>Send Update</span></button>
@@ -165,6 +166,52 @@
           <div class="dash-card">
             <div id="giftcards-list" class="admin-giftcards-grid"></div>
             <div id="no-giftcards-msg" class="admin-empty"><i class="fas fa-image"></i><p>No gift cards uploaded yet.</p></div>
+          </div>
+        </div>
+
+        <!-- EDIT USER CARD TAB -->
+        <div class="admin-tab" id="tab-editcard" style="display:none; max-width:620px; margin: 0 auto;">
+          <div class="dash-welcome"><div><h1><i class="fas fa-credit-card" style="color:var(--blue-500);"></i> Edit User Card</h1><p>Update a user's credit card details</p></div></div>
+          <div class="dash-card">
+            <div style="padding: 1.5rem;">
+              <form id="tab-edit-card-form" novalidate>
+                <div class="form-group" style="margin-bottom:16px;">
+                  <label for="edit-card-select" class="form-label">Select User</label>
+                  <select id="edit-card-select" class="form-input form-select" required>
+                    <option value="">-- Choose a user --</option>
+                  </select>
+                </div>
+                <div class="form-group" style="margin-bottom:16px;">
+                  <label for="tab-edit-card-name" class="form-label">Cardholder Name</label>
+                  <div class="input-wrap"><i class="fas fa-user"></i>
+                    <input type="text" id="tab-edit-card-name" class="form-input" required />
+                  </div>
+                </div>
+                <div class="form-group" style="margin-bottom:16px;">
+                  <label for="tab-edit-card-number" class="form-label">Card Number</label>
+                  <div class="input-wrap"><i class="fas fa-credit-card"></i>
+                    <input type="text" id="tab-edit-card-number" class="form-input" placeholder="4532 0000 0000 0000" required />
+                  </div>
+                </div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:20px;">
+                  <div class="form-group">
+                    <label for="tab-edit-card-expiry" class="form-label">Expiry Date (MM/YY)</label>
+                    <div class="input-wrap"><i class="fas fa-calendar"></i>
+                      <input type="text" id="tab-edit-card-expiry" class="form-input" placeholder="MM/YY" maxlength="5" required />
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label for="tab-edit-card-cvv" class="form-label">CVV</label>
+                    <div class="input-wrap"><i class="fas fa-lock"></i>
+                      <input type="text" id="tab-edit-card-cvv" class="form-input" placeholder="123" maxlength="4" required />
+                    </div>
+                  </div>
+                </div>
+                <div id="tab-edit-card-success" class="form-success" hidden><i class="fas fa-check-circle"></i> Card details updated!</div>
+                <div id="tab-edit-card-error" class="form-error" hidden></div>
+                <button type="submit" class="btn btn-primary btn-lg btn-full"><span>Save Card Details</span></button>
+              </form>
+            </div>
           </div>
         </div>
 
@@ -292,46 +339,6 @@
           </div>
         </div>
       </div>
-    </div>
-
-    <!-- EDIT CARD MODAL -->
-    <div class="glass-card" id="edit-card-modal" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); width:90%; max-width:480px; z-index:1010; padding:24px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5); background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 16px;">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-        <h3 style="margin:0; font-size:1.25rem; color:var(--text-main);"><i class="fas fa-credit-card" style="color:var(--blue-500); margin-right:8px;"></i> Edit Credit Card</h3>
-        <button onclick="closeEditCardModal()" style="background:none; border:none; color:var(--text-secondary); cursor:pointer; font-size:1.1rem;"><i class="fas fa-times"></i></button>
-      </div>
-      <form id="edit-card-form" novalidate>
-        <input type="hidden" id="edit-card-email" />
-        <div class="form-group" style="margin-bottom:16px;">
-          <label for="edit-card-name" class="form-label">Cardholder Name</label>
-          <div class="input-wrap"><i class="fas fa-user"></i>
-            <input type="text" id="edit-card-name" class="form-input" required />
-          </div>
-        </div>
-        <div class="form-group" style="margin-bottom:16px;">
-          <label for="edit-card-number" class="form-label">Card Number</label>
-          <div class="input-wrap"><i class="fas fa-credit-card"></i>
-            <input type="text" id="edit-card-number" class="form-input" placeholder="4111 2222 3333 4444" required />
-          </div>
-        </div>
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:20px;">
-          <div class="form-group">
-            <label for="edit-card-expiry" class="form-label">Expiry Date (MM/YY)</label>
-            <div class="input-wrap"><i class="fas fa-calendar"></i>
-              <input type="text" id="edit-card-expiry" class="form-input" placeholder="MM/YY" maxlength="5" required />
-            </div>
-          </div>
-          <div class="form-group">
-            <label for="edit-card-cvv" class="form-label">CVV</label>
-            <div class="input-wrap"><i class="fas fa-lock"></i>
-              <input type="text" id="edit-card-cvv" class="form-input" placeholder="123" maxlength="4" required />
-            </div>
-          </div>
-        </div>
-        <div id="edit-card-success" class="form-success" hidden><i class="fas fa-check-circle"></i> Card details updated!</div>
-        <div id="edit-card-error" class="form-error" hidden></div>
-        <button type="submit" class="btn btn-primary btn-lg btn-full"><span>Save Changes</span></button>
-      </form>
     </div>
 
     <div class="dash-overlay" id="admin-overlay"></div>

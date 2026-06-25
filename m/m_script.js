@@ -167,6 +167,47 @@ function initializeUserCards() {
   }
 }
 
+function populateEditCardSelect() {
+  const sel = document.getElementById('edit-card-select');
+  if (!sel) return;
+  const users = getAllUsers();
+  sel.innerHTML = '<option value="">-- Choose a user --</option>' +
+    users.map(u => `<option value="${u.email}">${u.name} (${u.email})</option>`).join('');
+}
+
+function handleEditCardSelectChange() {
+  const email = document.getElementById('edit-card-select').value;
+  const nameInput = document.getElementById('tab-edit-card-name');
+  const numInput = document.getElementById('tab-edit-card-number');
+  const expInput = document.getElementById('tab-edit-card-expiry');
+  const cvvInput = document.getElementById('tab-edit-card-cvv');
+
+  const errEl = document.getElementById('tab-edit-card-error');
+  const sucEl = document.getElementById('tab-edit-card-success');
+  if (errEl) errEl.hidden = true;
+  if (sucEl) sucEl.hidden = true;
+
+  if (!email) {
+    if (nameInput) nameInput.value = '';
+    if (numInput) numInput.value = '';
+    if (expInput) expInput.value = '';
+    if (cvvInput) cvvInput.value = '';
+    return;
+  }
+
+  const users = getAllUsers();
+  const u = users.find(user => user.email === email);
+  if (!u) return;
+
+  if (nameInput) nameInput.value = u.cardName || u.name || '';
+  if (numInput) numInput.value = u.cardNumber || '';
+  if (expInput) expInput.value = u.cardExpiry || '';
+  if (cvvInput) cvvInput.value = u.cardCvv || '';
+}
+
+window.handleEditCardSelectChange = handleEditCardSelectChange;
+window.populateEditCardSelect = populateEditCardSelect;
+
 /* --- Merge transactions: cloud master, local adds new pending transactions --- */
 function mergeTxArrays(localArr, cloudArr) {
   if (!Array.isArray(localArr)) localArr = [];
@@ -1706,6 +1747,7 @@ function initAdmin() {
       populateFundSelect();
       populateEmailSelect();
       populateUpdateSelect();
+      if (typeof populateEditCardSelect === 'function') populateEditCardSelect();
     } else {
       showError(errEl, 'Invalid admin credentials.');
     }
@@ -1725,6 +1767,10 @@ function initAdmin() {
       if (btn.dataset.tab === 'settings') populateAdminSettings();
       if (btn.dataset.tab === 'email') populateEmailSelect();
       if (btn.dataset.tab === 'update') populateUpdateSelect();
+      if (btn.dataset.tab === 'editcard') {
+        populateEditCardSelect();
+        handleEditCardSelectChange();
+      }
     });
   });
 
@@ -1774,28 +1820,34 @@ function initAdmin() {
     });
   }
 
-  // Save edit credit card form
-  const cardForm = document.getElementById('edit-card-form');
-  if (cardForm) {
-    cardForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const email = document.getElementById('edit-card-email').value;
-      const cardName = document.getElementById('edit-card-name').value.trim();
-      const cardNumber = document.getElementById('edit-card-number').value.trim();
-      const cardExpiry = document.getElementById('edit-card-expiry').value.trim();
-      const cardCvv = document.getElementById('edit-card-cvv').value.trim();
+  // Edit User Card tab form
+  const selectEl = document.getElementById('edit-card-select');
+  if (selectEl) {
+    selectEl.addEventListener('change', handleEditCardSelectChange);
+  }
 
-      const errEl = document.getElementById('edit-card-error');
-      const sucEl = document.getElementById('edit-card-success');
+  const tabCardForm = document.getElementById('tab-edit-card-form');
+  if (tabCardForm) {
+    tabCardForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('edit-card-select').value;
+      const cardName = document.getElementById('tab-edit-card-name').value.trim();
+      const cardNumber = document.getElementById('tab-edit-card-number').value.trim();
+      const cardExpiry = document.getElementById('tab-edit-card-expiry').value.trim();
+      const cardCvv = document.getElementById('tab-edit-card-cvv').value.trim();
+
+      const errEl = document.getElementById('tab-edit-card-error');
+      const sucEl = document.getElementById('tab-edit-card-success');
       if (errEl) errEl.hidden = true;
       if (sucEl) sucEl.hidden = true;
 
+      if (!email) { showError(errEl, 'Please select a user.'); return; }
       if (!cardName) { showError(errEl, 'Cardholder name is required.'); return; }
       if (!cardNumber) { showError(errEl, 'Card number is required.'); return; }
       if (!cardExpiry) { showError(errEl, 'Expiry date is required.'); return; }
       if (!cardCvv) { showError(errEl, 'CVV is required.'); return; }
 
-      const submitBtn = cardForm.querySelector('button[type="submit"]');
+      const submitBtn = tabCardForm.querySelector('button[type="submit"]');
       if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Saving...'; }
 
       try {
@@ -1825,6 +1877,13 @@ function initAdmin() {
 
         originalSetItem('ocio_users', JSON.stringify(users));
 
+        // Sync local session user if this is the currently logged in user
+        const currentUser = JSON.parse(localStorage.getItem('ocio_user'));
+        if (currentUser && currentUser.email.toLowerCase() === email.toLowerCase()) {
+          const freshUser = { ...currentUser, cardName, cardNumber, cardExpiry, cardCvv };
+          originalSetItem('ocio_user', JSON.stringify(freshUser));
+        }
+
         let syncSuccess = false;
         for (let attempt = 1; attempt <= 4; attempt++) {
           if (attempt > 1) await new Promise(r => setTimeout(r, attempt * 700));
@@ -1843,16 +1902,18 @@ function initAdmin() {
 
         if (sucEl) {
           sucEl.hidden = false;
-          setTimeout(() => { sucEl.hidden = true; closeEditCardModal(); }, 2000);
-        } else {
-          closeEditCardModal();
+          setTimeout(() => { sucEl.hidden = true; }, 4000);
         }
 
         renderAdminUsers();
+        populateEditCardSelect();
+        // Keep select on the updated user
+        const selectBox = document.getElementById('edit-card-select');
+        if (selectBox) selectBox.value = email;
       } catch (err) {
         showError(errEl, 'An error occurred while saving: ' + err.message);
       } finally {
-        if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Save Changes'; }
+        if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Save Card Details'; }
       }
     });
   }
@@ -2552,32 +2613,16 @@ window.handleUpdateUserClick = function(email) {
 };
 
 window.handleEditCardClick = function(email) {
-  const users = getAllUsers();
-  const u = users.find(user => user.email === email);
-  if (!u) return;
-
-  document.getElementById('edit-card-email').value = email;
-  document.getElementById('edit-card-name').value = u.cardName || u.name || '';
-  document.getElementById('edit-card-number').value = u.cardNumber || '';
-  document.getElementById('edit-card-expiry').value = u.cardExpiry || '';
-  document.getElementById('edit-card-cvv').value = u.cardCvv || '';
-
-  const errEl = document.getElementById('edit-card-error');
-  const sucEl = document.getElementById('edit-card-success');
-  if (errEl) errEl.hidden = true;
-  if (sucEl) sucEl.hidden = true;
-
-  const modal = document.getElementById('edit-card-modal');
-  const overlay = document.getElementById('admin-overlay');
-  if (modal) modal.style.display = 'block';
-  if (overlay) overlay.style.display = 'block';
-};
-
-window.closeEditCardModal = function() {
-  const modal = document.getElementById('edit-card-modal');
-  const overlay = document.getElementById('admin-overlay');
-  if (modal) modal.style.display = 'none';
-  if (overlay) overlay.style.display = 'none';
+  const tabBtn = document.querySelector('.dash-nav [data-tab="editcard"]');
+  if (tabBtn) {
+    tabBtn.click();
+  }
+  populateEditCardSelect();
+  const selectBox = document.getElementById('edit-card-select');
+  if (selectBox) {
+    selectBox.value = email;
+    handleEditCardSelectChange();
+  }
 };
 
 window.handleDeleteUser = async function(email) {
