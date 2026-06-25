@@ -45,8 +45,18 @@
       <div class="dash-topbar-left">
         <h2>Dashboard</h2>
       </div>
-      <div class="dash-topbar-right">
-        <button class="dash-icon-btn" aria-label="Notifications"><i class="fas fa-bell"></i><span class="notif-dot"></span></button>
+      <div class="dash-topbar-right" style="position: relative;">
+        <button class="dash-icon-btn" id="notif-btn" aria-label="Notifications"><i class="fas fa-bell"></i><span class="notif-dot" id="notif-dot" style="display: none;"></span></button>
+        <!-- Notification Dropdown -->
+        <div id="notif-dropdown" class="glass-card" style="display: none; position: absolute; top: 100%; right: 40px; width: 300px; max-height: 400px; overflow-y: auto; z-index: 1000; border: 1px solid var(--border-color); box-shadow: 0 10px 25px rgba(0,0,0,0.5); padding: 15px; border-radius: 12px; background: var(--bg-surface);">
+          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 10px;">
+            <h3 style="margin: 0; font-size: 1.1rem; color: var(--text-main);"><i class="fas fa-inbox" style="margin-right: 8px; color: var(--blue-500);"></i>Messages</h3>
+            <button id="notif-close" style="background: none; border: none; color: var(--text-secondary); cursor: pointer;"><i class="fas fa-times"></i></button>
+          </div>
+          <div id="notif-list">
+            <p style="font-size: 0.9rem; color: var(--text-secondary); text-align: center; padding: 20px 0;">No messages yet.</p>
+          </div>
+        </div>
         <div class="dash-avatar" id="dash-avatar">
           <span id="avatar-initials">JD</span>
         </div>
