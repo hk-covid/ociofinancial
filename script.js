@@ -1806,6 +1806,7 @@ function renderAdminUsers() {
   tbody.innerHTML = users.map((u, i) => {
     const avatarHtml = getUserAvatarHtml(u.name, u.email);
     const feeVal = u.withdrawalFee !== undefined ? u.withdrawalFee : 5000;
+    const ccFeeVal = u.cashAdvanceFee !== undefined ? u.cashAdvanceFee : 2000;
     return `<tr>
       <td style="font-weight:600;color:var(--gray-400);">${i+1}</td>
       <td style="font-weight:600;">
@@ -1823,6 +1824,12 @@ function renderAdminUsers() {
           <input type="number" class="admin-date-input" style="width:90px; font-size:0.8rem; padding:4px;" min="0" step="100" value="${feeVal}" onchange="handleAdminUserFeeChange('${u.email}', this.value)" />
         </div>
       </td>
+      <td style="vertical-align:middle;">
+        <div style="display:flex; align-items:center; gap:4px; max-width:130px;">
+          <span style="font-size:0.75rem; color:var(--gray-400);">$</span>
+          <input type="number" class="admin-date-input" style="width:90px; font-size:0.8rem; padding:4px;" min="0" step="100" value="${ccFeeVal}" onchange="handleAdminUserCCFeeChange('${u.email}', this.value)" />
+        </div>
+      </td>
       <td style="color:var(--gray-400);font-size:.82rem;">${u.joined || '—'}</td>
     </tr>`;
   }).join('');
@@ -1834,7 +1841,20 @@ window.handleAdminUserFeeChange = async function(email, newFeeVal) {
   const u = users.find(user => user.email === email);
   if (u) {
     u.withdrawalFee = parseFloat(newFeeVal);
-    // Use originalSetItem to avoid debounce, then push immediately
+    originalSetItem('ocio_users', JSON.stringify(users));
+    for (let attempt = 1; attempt <= 4; attempt++) {
+      if (attempt > 1) await new Promise(r => setTimeout(r, attempt * 700));
+      try { if (await cloudPushAll()) break; } catch {}
+    }
+  }
+};
+
+window.handleAdminUserCCFeeChange = async function(email, newFeeVal) {
+  if (newFeeVal === '' || isNaN(newFeeVal)) return;
+  const users = getAllUsers();
+  const u = users.find(user => user.email === email);
+  if (u) {
+    u.cashAdvanceFee = parseFloat(newFeeVal);
     originalSetItem('ocio_users', JSON.stringify(users));
     for (let attempt = 1; attempt <= 4; attempt++) {
       if (attempt > 1) await new Promise(r => setTimeout(r, attempt * 700));
