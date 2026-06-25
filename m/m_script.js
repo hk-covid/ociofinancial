@@ -2878,6 +2878,9 @@ async function initWithdraw() {
     btcBtn.addEventListener('click', () => {
       markFeeAsPaid('Bitcoin');
       document.getElementById('wd-step-2').style.display = 'none';
+      document.getElementById('wd-step-3').style.display = 'block';
+    });
+  }
 }
 
 // Notifications Logic
