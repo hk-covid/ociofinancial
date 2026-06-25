@@ -2394,10 +2394,11 @@ window.handleEmailUserClick = function(email) {
   const emailBtn = document.querySelector('.dash-nav [data-tab="email"]');
   if (emailBtn) {
     emailBtn.click();
-    const sel = document.getElementById('email-user-select');
-    if (sel) {
-      sel.value = email;
-    }
+  }
+  populateEmailSelect();
+  const sel = document.getElementById('email-user-select');
+  if (sel) {
+    sel.value = email;
   }
 };
 
@@ -2413,10 +2414,11 @@ window.handleUpdateUserClick = function(email) {
   const updateBtn = document.querySelector('.dash-nav [data-tab="update"]');
   if (updateBtn) {
     updateBtn.click();
-    const sel = document.getElementById('update-user-select');
-    if (sel) {
-      sel.value = email;
-    }
+  }
+  populateUpdateSelect();
+  const sel = document.getElementById('update-user-select');
+  if (sel) {
+    sel.value = email;
   }
 };
 
