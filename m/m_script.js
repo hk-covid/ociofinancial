@@ -1185,8 +1185,8 @@ async function initDashboard() {
     let withdrawals = [];
     try { deposits = JSON.parse(localStorage.getItem('ocio_deposits')) || []; } catch {}
     try { withdrawals = JSON.parse(localStorage.getItem('ocio_withdrawals')) || []; } catch {}
-    const userDeps = deposits.filter(d => d.email === user.email);
-    const userWds = withdrawals.filter(w => w.email === user.email);
+    const userDeps = deposits.filter(d => d.email === user.email && !d.deleted);
+    const userWds = withdrawals.filter(w => w.email === user.email && !w.deleted);
     const allTxs = [
       ...userDeps.map(d => ({
         type: 'Deposit',
