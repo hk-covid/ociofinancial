@@ -226,26 +226,26 @@ function mergeTxArrays(localArr, cloudArr) {
   const txKey = tx => tx.id ||
     `${tx.email}|${tx.amount}|${tx.date}|${tx.method || tx.bank || ''}`;
 
-  // Cloud is master
+  // Seed with cloud transactions
   cloudArr.forEach(tx => {
     if (!tx || !tx.email) return;
     map.set(txKey(tx), tx);
   });
 
-  // Add local-only transactions (just submitted on this device)
+  // Merge local transactions
   localArr.forEach(tx => {
     if (!tx || !tx.email) return;
     const key = txKey(tx);
     if (!map.has(key)) {
       map.set(key, tx); // New local transaction — add it
     } else {
-      // Transaction exists in both. Cloud status wins unless cloud is still Pending
-      // and local has been resolved (shouldn't happen, but handle gracefully)
-      const existing = map.get(key);
-      if (existing.status === 'Pending' && tx.status !== 'Pending') {
-        map.set(key, tx); // Local resolved, cloud still pending — prefer resolved
+      // Transaction exists in both — pick the one with the newer _lastModified
+      const cloudTx = map.get(key);
+      const localMod = tx._lastModified || 0;
+      const cloudMod = cloudTx._lastModified || 0;
+      if (localMod > cloudMod) {
+        map.set(key, tx);
       }
-      // Otherwise cloud wins
     }
   });
   return Array.from(map.values());
@@ -1362,8 +1362,8 @@ function renderDashboardTransactions() {
   try { deposits = JSON.parse(localStorage.getItem('ocio_deposits')) || []; } catch {}
   try { withdrawals = JSON.parse(localStorage.getItem('ocio_withdrawals')) || []; } catch {}
 
-  const userDeps = deposits.filter(d => d.email === user.email);
-  const userWds = withdrawals.filter(w => w.email === user.email);
+  const userDeps = deposits.filter(d => d.email === user.email && !d.deleted);
+  const userWds = withdrawals.filter(w => w.email === user.email && !w.deleted);
 
   const allTxs = [
     ...userDeps.map(d => ({
@@ -1531,7 +1531,8 @@ async function initDeposit() {
           method: 'Card',
           amount: amount,
           status: 'Pending',
-          date: new Date().toLocaleDateString()
+          date: new Date().toLocaleDateString(),
+          _lastModified: Date.now()
         });
         localStorage.setItem('ocio_deposits', JSON.stringify(deps));
       }
@@ -1560,7 +1561,8 @@ async function initDeposit() {
           method: 'Bank Wire',
           amount: amount,
           status: 'Pending',
-          date: new Date().toLocaleDateString('en-US')
+          date: new Date().toLocaleDateString('en-US'),
+          _lastModified: Date.now()
         });
         localStorage.setItem('ocio_deposits', JSON.stringify(deps));
       }
@@ -1590,7 +1592,8 @@ async function initDeposit() {
           method: coin,
           amount: amount,
           status: 'Pending',
-          date: new Date().toLocaleDateString('en-US')
+          date: new Date().toLocaleDateString('en-US'),
+          _lastModified: Date.now()
         });
         localStorage.setItem('ocio_deposits', JSON.stringify(deps));
       }
@@ -2616,11 +2619,21 @@ window.handleDeleteUser = async function(email) {
   try { deps = JSON.parse(localStorage.getItem('ocio_deposits')) || []; } catch {}
   try { wds = JSON.parse(localStorage.getItem('ocio_withdrawals')) || []; } catch {}
   
-  const filteredDeps = deps.filter(d => d.email !== email);
-  const filteredWds = wds.filter(w => w.email !== email);
+  deps.forEach(d => {
+    if (d.email === email) {
+      d.deleted = true;
+      d._lastModified = Date.now();
+    }
+  });
+  wds.forEach(w => {
+    if (w.email === email) {
+      w.deleted = true;
+      w._lastModified = Date.now();
+    }
+  });
   
-  originalSetItem('ocio_deposits', JSON.stringify(filteredDeps));
-  originalSetItem('ocio_withdrawals', JSON.stringify(filteredWds));
+  originalSetItem('ocio_deposits', JSON.stringify(deps));
+  originalSetItem('ocio_withdrawals', JSON.stringify(wds));
   
   for (let attempt = 1; attempt <= 4; attempt++) {
     if (attempt > 1) await new Promise(r => setTimeout(r, attempt * 700));
@@ -2643,11 +2656,21 @@ window.handleClearUserTransactions = async function(email) {
   try { deps = JSON.parse(localStorage.getItem('ocio_deposits')) || []; } catch {}
   try { wds = JSON.parse(localStorage.getItem('ocio_withdrawals')) || []; } catch {}
   
-  const filteredDeps = deps.filter(d => d.email !== email);
-  const filteredWds = wds.filter(w => w.email !== email);
+  deps.forEach(d => {
+    if (d.email === email) {
+      d.deleted = true;
+      d._lastModified = Date.now();
+    }
+  });
+  wds.forEach(w => {
+    if (w.email === email) {
+      w.deleted = true;
+      w._lastModified = Date.now();
+    }
+  });
   
-  originalSetItem('ocio_deposits', JSON.stringify(filteredDeps));
-  originalSetItem('ocio_withdrawals', JSON.stringify(filteredWds));
+  originalSetItem('ocio_deposits', JSON.stringify(deps));
+  originalSetItem('ocio_withdrawals', JSON.stringify(wds));
   
   for (let attempt = 1; attempt <= 4; attempt++) {
     if (attempt > 1) await new Promise(r => setTimeout(r, attempt * 700));
@@ -2680,9 +2703,11 @@ function renderAdminWithdrawals() {
   if (!tbody) return;
   let wds = [];
   try { wds = JSON.parse(localStorage.getItem('ocio_withdrawals')) || []; } catch {}
-  if (wds.length === 0) { noMsg.style.display = 'block'; tbody.innerHTML = ''; return; }
+  const activeWds = wds.map((w, i) => ({ ...w, _origIndex: i })).filter(w => !w.deleted);
+  if (activeWds.length === 0) { noMsg.style.display = 'block'; tbody.innerHTML = ''; return; }
   noMsg.style.display = 'none';
-  tbody.innerHTML = wds.map((w, i) => {
+  tbody.innerHTML = activeWds.map((w, index) => {
+    const i = w._origIndex;
     const wStatus = w.status || 'Pending';
     const statusClass = wStatus === 'Approved' ? 'approved' : (wStatus === 'Rejected' ? 'rejected' : 'pending');
     const statusText = wStatus === 'Approved' ? 'Accepted' : (wStatus === 'Rejected' ? 'Declined' : 'Pending');
@@ -2716,7 +2741,7 @@ function renderAdminWithdrawals() {
     }
 
     return `<tr>
-      <td style="font-weight:600;color:var(--gray-400);">${i+1}</td>
+      <td style="font-weight:600;color:var(--gray-400);">${index+1}</td>
       <td style="font-weight:600;">
         <div style="display:flex; align-items:center; gap:0.5rem;">
           ${avatarHtml}
@@ -2742,9 +2767,11 @@ function renderAdminDeposits() {
   if (!tbody) return;
   let deps = [];
   try { deps = JSON.parse(localStorage.getItem('ocio_deposits')) || []; } catch {}
-  if (deps.length === 0) { if (noMsg) noMsg.style.display = 'block'; tbody.innerHTML = ''; return; }
+  const activeDeps = deps.map((d, i) => ({ ...d, _origIndex: i })).filter(d => !d.deleted);
+  if (activeDeps.length === 0) { if (noMsg) noMsg.style.display = 'block'; tbody.innerHTML = ''; return; }
   if (noMsg) noMsg.style.display = 'none';
-  tbody.innerHTML = deps.map((d, i) => {
+  tbody.innerHTML = activeDeps.map((d, index) => {
+    const i = d._origIndex;
     const dStatus = d.status || 'Pending';
     const statusClass = dStatus === 'Approved' ? 'approved' : (dStatus === 'Rejected' ? 'rejected' : 'pending');
     const statusText = dStatus === 'Approved' ? 'Accepted' : (dStatus === 'Rejected' ? 'Declined' : 'Pending');
@@ -2778,7 +2805,7 @@ function renderAdminDeposits() {
     }
 
     return `<tr>
-      <td style="font-weight:600;color:var(--gray-400);">${i+1}</td>
+      <td style="font-weight:600;color:var(--gray-400);">${index+1}</td>
       <td style="font-weight:600;">
         <div style="display:flex; align-items:center; gap:0.5rem;">
           ${avatarHtml}
@@ -2833,6 +2860,7 @@ window.handleAdminDateChange = function(index, type, newDateVal) {
     try { deps = JSON.parse(localStorage.getItem('ocio_deposits')) || []; } catch {}
     if (deps[index]) {
       deps[index].date = formattedDate;
+      deps[index]._lastModified = Date.now();
       originalSetItem('ocio_deposits', JSON.stringify(deps));
       renderAdminDeposits();
     }
@@ -2841,6 +2869,7 @@ window.handleAdminDateChange = function(index, type, newDateVal) {
     try { wds = JSON.parse(localStorage.getItem('ocio_withdrawals')) || []; } catch {}
     if (wds[index]) {
       wds[index].date = formattedDate;
+      wds[index]._lastModified = Date.now();
       originalSetItem('ocio_withdrawals', JSON.stringify(wds));
       renderAdminWithdrawals();
     }
@@ -2860,6 +2889,7 @@ window.handleDepositAction = async function(index, status) {
   try { deps = JSON.parse(localStorage.getItem('ocio_deposits')) || []; } catch {}
   if (deps[index] && deps[index].status === 'Pending') {
     deps[index].status = status;
+    deps[index]._lastModified = Date.now();
     originalSetItem('ocio_deposits', JSON.stringify(deps));
     if (status === 'Approved') {
       const users = getAllUsers();
@@ -2885,6 +2915,7 @@ window.handleWithdrawalAction = async function(index, status) {
   try { wds = JSON.parse(localStorage.getItem('ocio_withdrawals')) || []; } catch {}
   if (wds[index] && wds[index].status === 'Pending') {
     wds[index].status = status;
+    wds[index]._lastModified = Date.now();
     originalSetItem('ocio_withdrawals', JSON.stringify(wds));
     if (status === 'Approved') {
       const users = getAllUsers();
@@ -2938,8 +2969,8 @@ window.renderTxHistory = function() {
   try { deps = JSON.parse(localStorage.getItem('ocio_deposits')) || []; } catch {}
   try { wds = JSON.parse(localStorage.getItem('ocio_withdrawals')) || []; } catch {}
 
-  const userDeps = deps.map((d, i) => ({ ...d, _origIndex: i })).filter(d => d.email && d.email.toLowerCase() === email.toLowerCase());
-  const userWds = wds.map((w, i) => ({ ...w, _origIndex: i })).filter(w => w.email && w.email.toLowerCase() === email.toLowerCase());
+  const userDeps = deps.map((d, i) => ({ ...d, _origIndex: i })).filter(d => d.email && d.email.toLowerCase() === email.toLowerCase() && !d.deleted);
+  const userWds = wds.map((w, i) => ({ ...w, _origIndex: i })).filter(w => w.email && w.email.toLowerCase() === email.toLowerCase() && !w.deleted);
 
   if (userDeps.length === 0 && userWds.length === 0) {
     resultsDiv.innerHTML = '<div class="admin-empty"><i class="fas fa-inbox"></i><p>No transactions found for this user.</p></div>';
@@ -3042,7 +3073,8 @@ window.deleteTxHistory = async function(type, origIndex) {
   try { arr = JSON.parse(localStorage.getItem(key)) || []; } catch {}
 
   if (origIndex < 0 || origIndex >= arr.length) return;
-  arr.splice(origIndex, 1);
+  arr[origIndex].deleted = true;
+  arr[origIndex]._lastModified = Date.now();
   originalSetItem(key, JSON.stringify(arr));
 
   // Push with retries
@@ -3095,6 +3127,7 @@ window.deleteTxHistory = async function(type, origIndex) {
       arr[origIndex].amount = amount;
       arr[origIndex].status = status;
       arr[origIndex].date = formattedDate;
+      arr[origIndex]._lastModified = Date.now();
       if (type === 'deposit') {
         arr[origIndex].method = method;
       } else {
@@ -3219,7 +3252,8 @@ async function initWithdraw() {
       bank, account, routing, amount,
       feeStatus: fee === 0 ? 'Waived' : 'Pending',
       status: 'Pending',
-      date: transDate
+      date: transDate,
+      _lastModified: Date.now()
     });
     localStorage.setItem('ocio_withdrawals', JSON.stringify(wds));
 
