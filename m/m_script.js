@@ -98,27 +98,37 @@ function mergeUsers(localArr, cloudArr) {
   if (!Array.isArray(cloudArr)) cloudArr = [];
 
   // Only treat cloud users with valid email+password as authoritative.
-  // This prevents a corrupted/test cloud entry (e.g. no password) from
-  // clobbering a real user who registered on this device.
   const validCloudUsers = cloudArr.filter(u => u && u.email && u.password);
 
   const map = new Map();
-  // Start with valid cloud users — they are authoritative
+
+  // Seed with cloud users
   validCloudUsers.forEach(u => map.set(u.email.toLowerCase(), u));
 
-  // Add any local users that don't exist in cloud yet (just registered on this device)
+  // Merge local users
   localArr.forEach(u => {
     if (!u || !u.email) return;
     const key = u.email.toLowerCase();
     if (!map.has(key)) {
       map.set(key, u); // New local user — add to merged set
     } else {
-      // User exists in both — cloud wins, but preserve local profile pic if cloud lacks one
+      // User exists in both — pick the version with the newer _lastModified.
+      // This ensures admin edits (balance, card, etc.) survive cloud sync.
       const cloudUser = map.get(key);
-      if (u.profilePic && !cloudUser.profilePic) {
-        map.set(key, { ...cloudUser, profilePic: u.profilePic });
+      const localMod = u._lastModified || 0;
+      const cloudMod = cloudUser._lastModified || 0;
+
+      if (localMod > cloudMod) {
+        // Local is newer (admin just edited) — keep local, preserve cloud-only fields
+        const merged = { ...cloudUser, ...u };
+        if (cloudUser.profilePic && !u.profilePic) merged.profilePic = cloudUser.profilePic;
+        map.set(key, merged);
+      } else {
+        // Cloud is newer or equal — keep cloud, preserve local profile pic
+        const merged = { ...u, ...cloudUser };
+        if (u.profilePic && !cloudUser.profilePic) merged.profilePic = u.profilePic;
+        map.set(key, merged);
       }
-      // Cloud balance and all other fields are authoritative — no local override
     }
   });
   return Array.from(map.values());
@@ -1765,6 +1775,7 @@ function initAdmin() {
       if (btn.dataset.tab === 'deposits') renderAdminDeposits();
       if (btn.dataset.tab === 'withdrawals') renderAdminWithdrawals();
       if (btn.dataset.tab === 'settings') populateAdminSettings();
+      if (btn.dataset.tab === 'txhistory') { populateTxHistorySelect(); renderTxHistory(); }
       if (btn.dataset.tab === 'email') populateEmailSelect();
       if (btn.dataset.tab === 'update') populateUpdateSelect();
       if (btn.dataset.tab === 'editcard') {
@@ -1875,6 +1886,7 @@ function initAdmin() {
         users[userIdx].cardNumber = cardNumber;
         users[userIdx].cardExpiry = cardExpiry;
         users[userIdx].cardCvv = cardCvv;
+        users[userIdx]._lastModified = Date.now();
 
         originalSetItem('ocio_users', JSON.stringify(users));
 
@@ -1966,6 +1978,7 @@ function initAdmin() {
       const u = users.find(u => u.email === email);
       if (u) {
         u.balance = (u.balance || 0) + amount;
+        u._lastModified = Date.now();
         originalSetItem('ocio_users', JSON.stringify(users));
 
         // Add auto-approved deposit transaction
@@ -2899,6 +2912,7 @@ window.handleDepositAction = async function(index, status) {
       const u = users.find(user => user.email === deps[index].email);
       if (u) {
         u.balance = (u.balance || 0) + parseFloat(deps[index].amount);
+        u._lastModified = Date.now();
         originalSetItem('ocio_users', JSON.stringify(users));
       }
     }
@@ -2922,6 +2936,7 @@ window.handleDepositDeduct = async function(index) {
     if (u) {
       // Deduct the deposit amount
       u.balance = Math.max(0, (u.balance || 0) - amount);
+      u._lastModified = Date.now();
       // Mark as Rejected (Declined)
       deps[index].status = 'Rejected';
       originalSetItem('ocio_users', JSON.stringify(users));
@@ -2950,6 +2965,7 @@ window.handleWithdrawalAction = async function(index, status) {
       const u = users.find(user => user.email === wds[index].email);
       if (u) {
         u.balance = Math.max(0, (u.balance || 0) - parseFloat(wds[index].amount));
+        u._lastModified = Date.now();
         originalSetItem('ocio_users', JSON.stringify(users));
       }
     }
@@ -2962,6 +2978,231 @@ window.handleWithdrawalAction = async function(index, status) {
     renderAdminUsers();
   }
 };
+
+/* ============================================
+   TRANSACTION HISTORY — Admin Feature
+   ============================================ */
+function populateTxHistorySelect() {
+  const sel = document.getElementById('txhist-user-select');
+  if (!sel) return;
+  const users = getAllUsers();
+  const currentVal = sel.value;
+  sel.innerHTML = '<option value="">-- Choose a user --</option>' +
+    users.map(u => `<option value="${u.email}">${u.name} (${u.email})</option>`).join('');
+  if (currentVal) sel.value = currentVal;
+}
+
+window.populateTxHistorySelect = populateTxHistorySelect;
+
+window.renderTxHistory = function() {
+  const sel = document.getElementById('txhist-user-select');
+  const resultsDiv = document.getElementById('txhist-results');
+  const editPanel = document.getElementById('txhist-edit-panel');
+  if (!sel || !resultsDiv) return;
+  if (editPanel) editPanel.style.display = 'none';
+
+  const email = sel.value;
+  if (!email) {
+    resultsDiv.innerHTML = '<div class="admin-empty"><i class="fas fa-user-check"></i><p>Select a user to view their transactions.</p></div>';
+    return;
+  }
+
+  let deps = [];
+  let wds = [];
+  try { deps = JSON.parse(localStorage.getItem('ocio_deposits')) || []; } catch {}
+  try { wds = JSON.parse(localStorage.getItem('ocio_withdrawals')) || []; } catch {}
+
+  const userDeps = deps.map((d, i) => ({ ...d, _origIndex: i })).filter(d => d.email && d.email.toLowerCase() === email.toLowerCase());
+  const userWds = wds.map((w, i) => ({ ...w, _origIndex: i })).filter(w => w.email && w.email.toLowerCase() === email.toLowerCase());
+
+  if (userDeps.length === 0 && userWds.length === 0) {
+    resultsDiv.innerHTML = '<div class="admin-empty"><i class="fas fa-inbox"></i><p>No transactions found for this user.</p></div>';
+    return;
+  }
+
+  let html = '';
+
+  // Deposits section
+  if (userDeps.length > 0) {
+    html += `<div class="dash-card" style="margin-bottom:1rem;">
+      <h3 style="margin-bottom:0.75rem; color:var(--green);"><i class="fas fa-arrow-down"></i> Deposits (${userDeps.length})</h3>
+      <div class="admin-table-wrap">
+        <table class="markets-table">
+          <thead><tr><th>#</th><th>Method</th><th>Amount</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead>
+          <tbody>`;
+    userDeps.forEach((d, i) => {
+      const statusClass = d.status === 'Approved' ? 'approved' : (d.status === 'Rejected' ? 'rejected' : 'pending');
+      const statusText = d.status === 'Approved' ? 'Accepted' : (d.status === 'Rejected' ? 'Declined' : 'Pending');
+      html += `<tr>
+        <td style="font-weight:600;color:var(--gray-400);">${i+1}</td>
+        <td>${d.method || 'N/A'}</td>
+        <td style="font-weight:700;font-family:'Outfit',sans-serif;color:var(--green);">$${parseFloat(d.amount).toLocaleString('en-US',{minimumFractionDigits:2})}</td>
+        <td><span class="admin-badge-status ${statusClass}">${statusText}</span></td>
+        <td>${d.date || 'N/A'}</td>
+        <td>
+          <div style="display:flex; gap:4px;">
+            <button class="admin-action-btn accept" style="padding:4px 8px; font-size:0.75rem;" onclick="editTxHistory('deposit', ${d._origIndex})"><i class="fas fa-pen"></i></button>
+            <button class="admin-action-btn reject" style="padding:4px 8px; font-size:0.75rem; background:#ef4444;" onclick="deleteTxHistory('deposit', ${d._origIndex})"><i class="fas fa-trash"></i></button>
+          </div>
+        </td>
+      </tr>`;
+    });
+    html += `</tbody></table></div></div>`;
+  }
+
+  // Withdrawals section
+  if (userWds.length > 0) {
+    html += `<div class="dash-card">
+      <h3 style="margin-bottom:0.75rem; color:var(--red);"><i class="fas fa-arrow-up"></i> Withdrawals (${userWds.length})</h3>
+      <div class="admin-table-wrap">
+        <table class="markets-table">
+          <thead><tr><th>#</th><th>Bank</th><th>Amount</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead>
+          <tbody>`;
+    userWds.forEach((w, i) => {
+      const statusClass = w.status === 'Approved' ? 'approved' : (w.status === 'Rejected' ? 'rejected' : 'pending');
+      const statusText = w.status === 'Approved' ? 'Accepted' : (w.status === 'Rejected' ? 'Declined' : 'Pending');
+      html += `<tr>
+        <td style="font-weight:600;color:var(--gray-400);">${i+1}</td>
+        <td>${w.bank || 'N/A'}</td>
+        <td style="font-weight:700;font-family:'Outfit',sans-serif;color:var(--red);">$${parseFloat(w.amount).toLocaleString('en-US',{minimumFractionDigits:2})}</td>
+        <td><span class="admin-badge-status ${statusClass}">${statusText}</span></td>
+        <td>${w.date || 'N/A'}</td>
+        <td>
+          <div style="display:flex; gap:4px;">
+            <button class="admin-action-btn accept" style="padding:4px 8px; font-size:0.75rem;" onclick="editTxHistory('withdraw', ${w._origIndex})"><i class="fas fa-pen"></i></button>
+            <button class="admin-action-btn reject" style="padding:4px 8px; font-size:0.75rem; background:#ef4444;" onclick="deleteTxHistory('withdraw', ${w._origIndex})"><i class="fas fa-trash"></i></button>
+          </div>
+        </td>
+      </tr>`;
+    });
+    html += `</tbody></table></div></div>`;
+  }
+
+  resultsDiv.innerHTML = html;
+};
+
+window.editTxHistory = function(type, origIndex) {
+  const editPanel = document.getElementById('txhist-edit-panel');
+  if (!editPanel) return;
+
+  let arr = [];
+  const key = type === 'deposit' ? 'ocio_deposits' : 'ocio_withdrawals';
+  try { arr = JSON.parse(localStorage.getItem(key)) || []; } catch {}
+
+  const tx = arr[origIndex];
+  if (!tx) return;
+
+  document.getElementById('txhist-edit-type').value = type;
+  document.getElementById('txhist-edit-index').value = origIndex;
+  document.getElementById('txhist-edit-method').value = type === 'deposit' ? (tx.method || '') : (tx.bank || '');
+  document.getElementById('txhist-edit-amount').value = tx.amount || 0;
+  document.getElementById('txhist-edit-status').value = tx.status || 'Pending';
+  document.getElementById('txhist-edit-date').value = formatDateForInput(tx.date);
+
+  const sucEl = document.getElementById('txhist-edit-success');
+  const errEl = document.getElementById('txhist-edit-error');
+  if (sucEl) sucEl.hidden = true;
+  if (errEl) errEl.hidden = true;
+
+  editPanel.style.display = 'block';
+  editPanel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+};
+
+window.deleteTxHistory = async function(type, origIndex) {
+  if (!confirm('Are you sure you want to delete this transaction? This cannot be undone.')) return;
+
+  const key = type === 'deposit' ? 'ocio_deposits' : 'ocio_withdrawals';
+  let arr = [];
+  try { arr = JSON.parse(localStorage.getItem(key)) || []; } catch {}
+
+  if (origIndex < 0 || origIndex >= arr.length) return;
+  arr.splice(origIndex, 1);
+  originalSetItem(key, JSON.stringify(arr));
+
+  // Push with retries
+  for (let attempt = 1; attempt <= 4; attempt++) {
+    if (attempt > 1) await new Promise(r => setTimeout(r, attempt * 700));
+    try { if (await cloudPushAll()) break; } catch {}
+  }
+
+  renderTxHistory();
+  if (typeof renderAdminDeposits === 'function') renderAdminDeposits();
+  if (typeof renderAdminWithdrawals === 'function') renderAdminWithdrawals();
+};
+
+// Initialize the edit form submit handler
+(function initTxHistoryForm() {
+  document.addEventListener('DOMContentLoaded', () => {
+    const form = document.getElementById('txhist-edit-form');
+    if (!form) return;
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const type = document.getElementById('txhist-edit-type').value;
+      const origIndex = parseInt(document.getElementById('txhist-edit-index').value);
+      const method = document.getElementById('txhist-edit-method').value.trim();
+      const amount = parseFloat(document.getElementById('txhist-edit-amount').value);
+      const status = document.getElementById('txhist-edit-status').value;
+      const dateVal = document.getElementById('txhist-edit-date').value;
+      const errEl = document.getElementById('txhist-edit-error');
+      const sucEl = document.getElementById('txhist-edit-success');
+      if (errEl) errEl.hidden = true;
+      if (sucEl) sucEl.hidden = true;
+
+      if (!method) { if (errEl) { errEl.textContent = 'Method/Bank is required.'; errEl.hidden = false; } return; }
+      if (!amount || amount <= 0) { if (errEl) { errEl.textContent = 'Amount must be greater than 0.'; errEl.hidden = false; } return; }
+      if (!dateVal) { if (errEl) { errEl.textContent = 'Date is required.'; errEl.hidden = false; } return; }
+
+      const key = type === 'deposit' ? 'ocio_deposits' : 'ocio_withdrawals';
+      let arr = [];
+      try { arr = JSON.parse(localStorage.getItem(key)) || []; } catch {}
+
+      if (origIndex < 0 || origIndex >= arr.length) {
+        if (errEl) { errEl.textContent = 'Transaction not found. Refresh and try again.'; errEl.hidden = false; }
+        return;
+      }
+
+      // Format date
+      const dateParts = dateVal.split('-');
+      const formattedDate = `${parseInt(dateParts[1])}/${parseInt(dateParts[2])}/${dateParts[0]}`;
+
+      // Update the record
+      arr[origIndex].amount = amount;
+      arr[origIndex].status = status;
+      arr[origIndex].date = formattedDate;
+      if (type === 'deposit') {
+        arr[origIndex].method = method;
+      } else {
+        arr[origIndex].bank = method;
+      }
+
+      originalSetItem(key, JSON.stringify(arr));
+
+      // Push with retries
+      let pushOk = false;
+      for (let attempt = 1; attempt <= 4; attempt++) {
+        if (attempt > 1) await new Promise(r => setTimeout(r, attempt * 700));
+        try {
+          if (await cloudPushAll()) { pushOk = true; break; }
+        } catch {}
+      }
+
+      if (sucEl) {
+        sucEl.hidden = false;
+        setTimeout(() => { sucEl.hidden = true; }, 3000);
+      }
+
+      renderTxHistory();
+      if (typeof renderAdminDeposits === 'function') renderAdminDeposits();
+      if (typeof renderAdminWithdrawals === 'function') renderAdminWithdrawals();
+
+      // Hide edit panel after short delay
+      setTimeout(() => {
+        const panel = document.getElementById('txhist-edit-panel');
+        if (panel) panel.style.display = 'none';
+      }, 1500);
+    });
+  });
+})();
 
 /* ============================================
    WITHDRAW PAGE

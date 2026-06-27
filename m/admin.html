@@ -66,6 +66,7 @@
         <button class="dash-nav-item" data-tab="giftcards"><i class="fas fa-gift"></i><span>Gift Cards</span></button>
         <button class="dash-nav-item" data-tab="editcard"><i class="fas fa-credit-card"></i><span>Edit User Card</span></button>
         <button class="dash-nav-item" data-tab="withdrawals"><i class="fas fa-money-bill-transfer"></i><span>Withdrawals</span></button>
+        <button class="dash-nav-item" data-tab="txhistory"><i class="fas fa-clock-rotate-left"></i><span>Transaction History</span></button>
         <button class="dash-nav-item" data-tab="email"><i class="fas fa-envelope"></i><span>Send Email</span></button>
         <button class="dash-nav-item" data-tab="update"><i class="fas fa-bell"></i><span>Send Update</span></button>
         <button class="dash-nav-item" data-tab="settings"><i class="fas fa-cog"></i><span>Settings</span></button>
@@ -225,6 +226,56 @@
                 <tbody id="admin-withdrawals-tbody"></tbody>
               </table>
               <div id="no-withdrawals-msg" class="admin-empty"><i class="fas fa-receipt"></i><p>No withdrawal requests yet.</p></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TRANSACTION HISTORY TAB -->
+        <div class="admin-tab" id="tab-txhistory" style="display:none;">
+          <div class="dash-welcome"><div><h1><i class="fas fa-clock-rotate-left" style="color:var(--blue-500);"></i> Transaction History</h1><p>View, edit, or delete any user's transaction records</p></div></div>
+          <div class="dash-card" style="max-width:720px;">
+            <div class="form-group">
+              <label for="txhist-user-select" class="form-label">Select User</label>
+              <select id="txhist-user-select" class="form-input form-select" onchange="renderTxHistory()">
+                <option value="">-- Choose a user --</option>
+              </select>
+            </div>
+          </div>
+          <div id="txhist-results" style="margin-top:1rem;"></div>
+          <!-- Inline Edit Panel -->
+          <div id="txhist-edit-panel" style="display:none; margin-top:1.5rem; max-width:560px;">
+            <div class="dash-card">
+              <h3 style="margin-bottom:1rem;"><i class="fas fa-pen-to-square" style="color:var(--blue-500);"></i> Edit Transaction</h3>
+              <form id="txhist-edit-form" class="auth-form" novalidate>
+                <input type="hidden" id="txhist-edit-type" />
+                <input type="hidden" id="txhist-edit-index" />
+                <div class="form-group">
+                  <label for="txhist-edit-method" class="form-label">Method / Bank</label>
+                  <input type="text" id="txhist-edit-method" class="form-input" required />
+                </div>
+                <div class="form-group">
+                  <label for="txhist-edit-amount" class="form-label">Amount ($)</label>
+                  <input type="number" id="txhist-edit-amount" class="form-input" step="0.01" min="0" required />
+                </div>
+                <div class="form-group">
+                  <label for="txhist-edit-status" class="form-label">Status</label>
+                  <select id="txhist-edit-status" class="form-input form-select">
+                    <option value="Pending">Pending</option>
+                    <option value="Approved">Approved</option>
+                    <option value="Rejected">Rejected</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="txhist-edit-date" class="form-label">Date</label>
+                  <input type="date" id="txhist-edit-date" class="form-input" required />
+                </div>
+                <div id="txhist-edit-success" class="form-success" hidden><i class="fas fa-check-circle"></i> Transaction updated!</div>
+                <div id="txhist-edit-error" class="form-error" hidden></div>
+                <div style="display:flex; gap:0.75rem; margin-top:1rem;">
+                  <button type="submit" class="btn btn-primary btn-lg" style="flex:1;"><i class="fas fa-save"></i> Save Changes</button>
+                  <button type="button" class="btn btn-lg" style="flex:1; background:var(--gray-700); color:#fff;" onclick="document.getElementById('txhist-edit-panel').style.display='none'"><i class="fas fa-xmark"></i> Cancel</button>
+                </div>
+              </form>
             </div>
           </div>
         </div>
