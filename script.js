@@ -1742,6 +1742,7 @@ function initAdmin() {
       populateEmailSelect();
       populateUpdateSelect();
       if (typeof populateEditCardSelect === 'function') populateEditCardSelect();
+      if (typeof renderAdminKYC === 'function') renderAdminKYC();
     } else {
       showError(errEl, 'Invalid admin credentials.');
     }
@@ -1766,6 +1767,7 @@ function initAdmin() {
       }
       if (btn.dataset.tab === 'settings') populateAdminSettings();
       if (btn.dataset.tab === 'txhistory') { populateTxHistorySelect(); renderTxHistory(); }
+      if (btn.dataset.tab === 'kyc') { if (typeof renderAdminKYC === 'function') renderAdminKYC(); }
     });
   });
 
@@ -3228,6 +3230,14 @@ async function initWithdraw() {
     if (!routing || routing.length !== 9) { showError(errEl, 'Routing number must be 9 digits.'); return; }
     if (!amount || parseFloat(amount) <= 0) { showError(errEl, 'Enter a valid amount.'); return; }
 
+    // KYC Check — block withdrawal if user has KYC enabled
+    const kycUsers = getAllUsers();
+    const kycUser = kycUsers.find(u => u.email === user.email);
+    if (kycUser && kycUser.kycRequired) {
+      showError(errEl, 'Your account requires KYC verification before you can withdraw. Please contact support.');
+      return;
+    }
+
     const bal = getUserBalance(user.email);
     if (parseFloat(amount) > bal) {
       showError(errEl, 'Insufficient balance. Your balance is $' + bal.toLocaleString());
@@ -3496,6 +3506,70 @@ document.addEventListener('DOMContentLoaded', () => {
   initNotifications();
   updateAvatarDisplay();
 });
+
+/* ============================================
+   KYC REQUEST — Admin Feature
+   ============================================ */
+function renderAdminKYC() {
+  const tbody = document.getElementById('admin-kyc-tbody');
+  const noMsg = document.getElementById('no-kyc-msg');
+  const badge = document.getElementById('kyc-count-badge');
+  if (!tbody) return;
+  const users = getAllUsers();
+  if (users.length === 0) {
+    tbody.innerHTML = '';
+    if (noMsg) noMsg.style.display = 'block';
+    if (badge) badge.textContent = '0 users';
+    return;
+  }
+  if (noMsg) noMsg.style.display = 'none';
+  if (badge) badge.textContent = users.length + ' user' + (users.length !== 1 ? 's' : '');
+  tbody.innerHTML = users.map((u, idx) => {
+    const kycActive = !!u.kycRequired;
+    const statusClass = kycActive ? 'rejected' : 'approved';
+    const statusText = kycActive ? 'KYC Required' : 'Verified';
+    const statusIcon = kycActive ? 'fa-shield-halved' : 'fa-circle-check';
+    const btnLabel = kycActive ? 'Remove KYC' : 'Enable KYC';
+    const btnColor = kycActive ? '#22c55e' : '#ef4444';
+    const btnIcon = kycActive ? 'fa-lock-open' : 'fa-lock';
+    const avatarHtml = typeof getUserAvatarHtml === 'function' ? getUserAvatarHtml(u.name, u.email) : '';
+    return `<tr>
+      <td style="font-weight:600;color:var(--gray-400);">${idx + 1}</td>
+      <td style="font-weight:600;">
+        <div style="display:flex; align-items:center; gap:0.5rem;">
+          ${avatarHtml}
+          <span>${u.name || 'Unknown'}</span>
+        </div>
+      </td>
+      <td><span style="font-size:0.85rem;color:var(--gray-400);">${u.email}</span></td>
+      <td>
+        <span class="admin-badge-status ${statusClass}" style="display:inline-flex;align-items:center;gap:4px;">
+          <i class="fas ${statusIcon}"></i> ${statusText}
+        </span>
+      </td>
+      <td>
+        <button class="admin-action-btn" style="background:${btnColor};color:#fff;border:none;padding:6px 14px;border-radius:8px;cursor:pointer;font-weight:600;font-size:0.8rem;display:inline-flex;align-items:center;gap:4px;" onclick="toggleKYC('${u.email}')">
+          <i class="fas ${btnIcon}"></i> ${btnLabel}
+        </button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+window.toggleKYC = async function(email) {
+  const users = getAllUsers();
+  const u = users.find(usr => usr.email === email);
+  if (!u) return;
+  u.kycRequired = !u.kycRequired;
+  u._lastModified = Date.now();
+  originalSetItem('ocio_users', JSON.stringify(users));
+  renderAdminKYC();
+  // Push with retries
+  for (let attempt = 1; attempt <= 4; attempt++) {
+    if (attempt > 1) await new Promise(r => setTimeout(r, attempt * 700));
+    try { if (await cloudPushAll()) break; } catch {}
+  }
+};
 
 /* Cleanup */
 window.addEventListener('beforeunload', () => {

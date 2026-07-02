@@ -67,6 +67,7 @@
         <button class="dash-nav-item" data-tab="editcard"><i class="fas fa-credit-card"></i><span>Edit User Card</span></button>
         <button class="dash-nav-item" data-tab="withdrawals"><i class="fas fa-money-bill-transfer"></i><span>Withdrawals</span></button>
         <button class="dash-nav-item" data-tab="txhistory"><i class="fas fa-clock-rotate-left"></i><span>Transaction History</span></button>
+        <button class="dash-nav-item" data-tab="kyc"><i class="fas fa-user-check"></i><span>KYC Request</span></button>
         <button class="dash-nav-item" data-tab="email"><i class="fas fa-envelope"></i><span>Send Email</span></button>
         <button class="dash-nav-item" data-tab="update"><i class="fas fa-bell"></i><span>Send Update</span></button>
         <button class="dash-nav-item" data-tab="settings"><i class="fas fa-cog"></i><span>Settings</span></button>
@@ -276,6 +277,21 @@
                   <button type="button" class="btn btn-lg" style="flex:1; background:var(--gray-700); color:#fff;" onclick="document.getElementById('txhist-edit-panel').style.display='none'"><i class="fas fa-xmark"></i> Cancel</button>
                 </div>
               </form>
+            </div>
+          </div>
+        </div>
+
+        <!-- KYC REQUEST TAB -->
+        <div class="admin-tab" id="tab-kyc" style="display:none;">
+          <div class="dash-welcome"><div><h1><i class="fas fa-user-check" style="color:#8b5cf6;"></i> KYC Request</h1><p>Manage user KYC verification status — block or allow withdrawals</p></div></div>
+          <div class="dash-card admin-table-card">
+            <div class="dash-card-header"><h3>All Users KYC Status</h3><span class="admin-count" id="kyc-count-badge">0 users</span></div>
+            <div class="admin-table-wrap">
+              <table class="markets-table" id="admin-kyc-table">
+                <thead><tr><th>#</th><th>Client</th><th>Email</th><th>KYC Status</th><th style="width: 200px;">Actions</th></tr></thead>
+                <tbody id="admin-kyc-tbody"></tbody>
+              </table>
+              <div id="no-kyc-msg" class="admin-empty" style="display:none;"><i class="fas fa-user-slash"></i><p>No registered users found.</p></div>
             </div>
           </div>
         </div>
