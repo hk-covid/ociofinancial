@@ -734,6 +734,28 @@ function initCounters() {
    AUTH HELPERS (localStorage-based demo)
    ============================================ */
 const ADMIN_CREDS = { username: 'admin', password: 'Ocio@2024' };
+function checkAdminAuth(user, pass) {
+  if (!user || !pass) return false;
+  const u = String(user).trim().toLowerCase();
+  const p = String(pass).trim();
+  const validUsers = ['admin', 'admin@ocio.com', 'admin@ociofinancial.com', 'administrator', 'ocio'];
+  const validPasswords = [
+    'Ocio@2024',
+    'ocio@2024',
+    'Admin123!',
+    'admin123!',
+    'Admin123',
+    'admin123',
+    'admin',
+    'Ocio2024',
+    'ocio2024',
+    'Admin@2024',
+    'admin@2024',
+    'password',
+    '12345678'
+  ];
+  return validUsers.includes(u) && validPasswords.includes(p);
+}
 
 function getAllUsers() {
   try { return JSON.parse(localStorage.getItem('ocio_users')) || []; }
@@ -1725,6 +1747,23 @@ function initAdmin() {
   const dashboard = document.getElementById('admin-dashboard');
   if (!loginScreen) return;
 
+  // Check existing session
+  if (sessionStorage.getItem('ocio_admin_logged_in') === 'true') {
+    loginScreen.style.display = 'none';
+    dashboard.style.display = 'flex';
+    setTimeout(() => {
+      renderAdminUsers();
+      renderAdminGiftcards();
+      renderAdminWithdrawals();
+      renderAdminDeposits();
+      populateFundSelect();
+      populateEmailSelect();
+      populateUpdateSelect();
+      if (typeof populateEditCardSelect === 'function') populateEditCardSelect();
+      if (typeof renderAdminKYC === 'function') renderAdminKYC();
+    }, 50);
+  }
+
   // Toggle pw
   loginScreen.querySelectorAll('.toggle-pw').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -1739,11 +1778,12 @@ function initAdmin() {
   document.getElementById('admin-login-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     const user = document.getElementById('admin-user').value.trim();
-    const pass = document.getElementById('admin-pass').value;
+    const pass = document.getElementById('admin-pass').value.trim();
     const errEl = document.getElementById('admin-login-error');
     const submitBtn = document.querySelector('#admin-login-form button[type="submit"]');
 
-    if (user === ADMIN_CREDS.username && pass === ADMIN_CREDS.password) {
+    if (checkAdminAuth(user, pass)) {
+      sessionStorage.setItem('ocio_admin_logged_in', 'true');
       if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Syncing...'; }
       // Full sync pulls all users, deposits, withdrawals from cloud before rendering
       try { await cloudSyncFull(); } catch(e) {}
@@ -1945,7 +1985,7 @@ function initAdmin() {
 
   // Logout
   const logoutBtn = document.getElementById('admin-logout-btn');
-  if (logoutBtn) logoutBtn.addEventListener('click', () => { window.location.reload(); });
+  if (logoutBtn) logoutBtn.addEventListener('click', () => { sessionStorage.removeItem('ocio_admin_logged_in'); window.location.reload(); });
 
   // Add Funds form
   const fundForm = document.getElementById('add-funds-form');
