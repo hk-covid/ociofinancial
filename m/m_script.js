@@ -10,8 +10,8 @@
    CLOUD SYNC ENGINE (Supabase)
    Syncs localStorage data across all devices
    ============================================ */
-const SUPABASE_URL = 'https://ursrbmvgrpjhuogfimal.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_tPbGnhGMinGYFI5tc4KbvA_7Gu2Ketw';
+const SUPABASE_URL = 'https://rgylygmjgfguqzqetkyv.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_87_mEpn6bZNf7dqXTxtbrw_lwqNxrId';
 const SYNC_ID = 2; // Using ID 2 for OCIO data
 const SYNC_KEYS = ['ocio_users', 'ocio_deposits', 'ocio_withdrawals', 'ocio_wallet_addresses', 'ocio_giftcards'];
 const originalSetItem = localStorage.setItem.bind(localStorage);
@@ -1070,9 +1070,7 @@ function initRegister() {
     }
 
     if (!pushOk) {
-      if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Create Account'; }
-      showError(errorEl, 'Server is currently busy (Rate Limited). Please try again in a few minutes.');
-      return;
+      console.warn('[Register] Cloud push not confirmed; proceeding with local storage and background sync.');
     }
 
     // Push succeeded! NOW we can safely save locally and log in.

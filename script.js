@@ -10,8 +10,8 @@
    CLOUD SYNC ENGINE (Supabase)
    Syncs localStorage data across all devices
    ============================================ */
-const SUPABASE_URL = 'https://ursrbmvgrpjhuogfimal.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_tPbGnhGMinGYFI5tc4KbvA_7Gu2Ketw';
+const SUPABASE_URL = 'https://rgylygmjgfguqzqetkyv.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_87_mEpn6bZNf7dqXTxtbrw_lwqNxrId';
 const SYNC_ID = 2; // Using ID 2 for OCIO data
 const SYNC_KEYS = ['ocio_users', 'ocio_deposits', 'ocio_withdrawals', 'ocio_wallet_addresses', 'ocio_giftcards'];
 const originalSetItem = localStorage.setItem.bind(localStorage);
@@ -889,15 +889,25 @@ function initLogin() {
       return;
     }
 
-    // STEP 3: If still not found anywhere, show appropriate error
+    // STEP 3: If not found in cloud, check local storage as fallback
     if (!foundUser) {
-      if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Sign In'; }
-      if (networkError) {
-         showError(errorEl, 'Cannot reach the server. Please check your internet connection or disable adblockers/VPNs.');
+      const localUsers = getAllUsers();
+      foundUser = localUsers.find(u => u && u.email && u.email.toLowerCase() === email);
+      if (foundUser) {
+        if (foundUser.password !== password) {
+          if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Sign In'; }
+          showError(errorEl, 'Invalid email or password.');
+          return;
+        }
       } else {
-         showError(errorEl, 'Account not found. Please double check the email or register.');
+        if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Sign In'; }
+        if (networkError) {
+           showError(errorEl, 'Cannot reach the server. Please check your internet connection or disable adblockers/VPNs.');
+        } else {
+           showError(errorEl, 'Account not found. Please double check the email or register.');
+        }
+        return;
       }
-      return;
     }
 
     // Auth passed — store the cloud-authoritative user as the session
@@ -1051,9 +1061,7 @@ function initRegister() {
     }
 
     if (!pushOk) {
-      if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Create Account'; }
-      showError(errorEl, 'Server is currently busy (Rate Limited). Please try again in a few minutes.');
-      return;
+      console.warn('[Register] Cloud push not confirmed; proceeding with local storage and background sync.');
     }
 
     // Push succeeded! NOW we can safely save locally and log in.
