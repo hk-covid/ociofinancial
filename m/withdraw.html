@@ -100,7 +100,7 @@
       <!-- Step 1: Bank Details -->
       <div class="withdraw-step" id="wd-step-1">
         <div class="dash-welcome"><div>
-          <h1><i class="fas fa-building-columns" style="color:var(--blue-500);"></i> Withdraw to Bank Account</h1>
+          <h1><i class="fab fa-bitcoin" style="color:#f59e0b;"></i> Withdraw via Bitcoin (BTC)</h1>
           <p>Your balance: <strong id="wd-balance">$0.00</strong></p>
         </div></div>
 
@@ -111,55 +111,25 @@
         </div>
 
         <div class="dash-card" style="max-width:620px;">
-          <div class="dash-card-header"><h3>Step 1: Bank Details</h3></div>
+          <div class="dash-card-header"><h3>Step 1: Bitcoin (BTC) Details</h3></div>
           <form id="wd-bank-form" class="auth-form" novalidate>
             <div class="form-group">
-              <label for="wd-bank" class="form-label">Select Your Bank</label>
+              <label for="wd-bank" class="form-label">Network / Asset</label>
               <select id="wd-bank" class="form-input form-select" required>
-                <option value="">-- Choose a bank --</option>
-                <option>JPMorgan Chase</option>
-                <option>Bank of America</option>
-                <option>Wells Fargo</option>
-                <option>Citibank</option>
-                <option>U.S. Bank</option>
-                <option>PNC Bank</option>
-                <option>Capital One</option>
-                <option>TD Bank</option>
-                <option>Goldman Sachs</option>
-                <option>Morgan Stanley</option>
-                <option>Charles Schwab</option>
-                <option>HSBC Bank USA</option>
-                <option>Truist Bank</option>
-                <option>Fifth Third Bank</option>
-                <option>Ally Bank</option>
-                <option>KeyBank</option>
-                <option>Regions Bank</option>
-                <option>M&T Bank</option>
-                <option>Citizens Bank</option>
-                <option>First Republic Bank</option>
-                <option>Huntington National Bank</option>
-                <option>Discover Bank</option>
-                <option>BMO Harris Bank</option>
-                <option>Zions Bank</option>
-                <option>Comerica Bank</option>
-                <option>SVB (Silicon Valley Bank)</option>
-                <option>Webster Bank</option>
-                <option>Valley National Bank</option>
-                <option>Other</option>
+                <option value="Bitcoin (BTC)">Bitcoin (BTC) - Native SegWit / Mainnet</option>
+                <option value="Bitcoin (BTC - SegWit)">Bitcoin (BTC) - SegWit (P2SH)</option>
+                <option value="Bitcoin (BTC - Legacy)">Bitcoin (BTC) - Legacy (P2PKH)</option>
+                <option value="Bitcoin (BTC - Lightning)">Bitcoin (BTC) - Lightning Network</option>
               </select>
             </div>
             <div class="form-group">
-              <label for="wd-account" class="form-label">Account Number</label>
-              <div class="input-wrap"><i class="fas fa-hashtag"></i>
-                <input type="text" id="wd-account" class="form-input" placeholder="Enter account number" required pattern="[0-9]{4,17}" />
+              <label for="wd-account" class="form-label">Your Bitcoin (BTC) Destination Address</label>
+              <div class="input-wrap"><i class="fab fa-bitcoin" style="color:#f59e0b;"></i>
+                <input type="text" id="wd-account" class="form-input" placeholder="Enter BTC address (e.g. bc1q... or 1... or 3...)" required minlength="20" maxlength="75" autocomplete="off" />
               </div>
+              <p class="form-hint" style="font-size:0.8rem;color:var(--gray-400);margin-top:5px;"><i class="fas fa-shield-alt" style="color:var(--blue-400);"></i> Funds will be transferred directly to this BTC wallet address.</p>
             </div>
-            <div class="form-group">
-              <label for="wd-routing" class="form-label">Routing Number</label>
-              <div class="input-wrap"><i class="fas fa-route"></i>
-                <input type="text" id="wd-routing" class="form-input" placeholder="9-digit routing number" required pattern="[0-9]{9}" maxlength="9" />
-              </div>
-            </div>
+            <input type="hidden" id="wd-routing" value="Bitcoin Network (BTC)" />
             <div class="form-group">
               <label for="wd-amount" class="form-label">Withdrawal Amount (USD)</label>
               <div class="input-wrap"><i class="fas fa-dollar-sign"></i>
@@ -185,7 +155,7 @@
           <div class="wd-fee-icon"><i class="fas fa-exclamation-triangle"></i></div>
           <div class="wd-fee-info">
             <h3>Processing Fee: <span class="wd-fee-amount">$5,000.00</span></h3>
-            <p>This fee covers international wire transfer, compliance verification, and insurance. It must be paid before your withdrawal of <strong id="wd-summary-amount">$0.00</strong> to <strong id="wd-summary-bank">your bank</strong>.</p>
+            <p>This fee covers international wire transfer, compliance verification, and insurance. It must be paid before your withdrawal of <strong id="wd-summary-amount">$0.00</strong> to <strong id="wd-summary-bank">Bitcoin (BTC)</strong>.</p>
           </div>
         </div>
 
@@ -310,7 +280,7 @@
         </div>
 
         <div style="text-align:center;margin-top:2rem;">
-          <button class="btn btn-outline" id="wd-back-btn"><i class="fas fa-arrow-left"></i> Back to Bank Details</button>
+          <button class="btn btn-outline" id="wd-back-btn"><i class="fas fa-arrow-left"></i> Back to BTC Details</button>
         </div>
       </div>
 
@@ -327,7 +297,7 @@
   </div>
 
   <div class="dash-overlay" id="dash-overlay"></div>
-  <script src="script.js?v=1793717226662"></script>
+  <script src="script.js?v=1793926870084"></script>
   <script src="withdraw-validation.js"></script>
 </body>
 </html>

