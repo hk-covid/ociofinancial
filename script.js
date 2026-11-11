@@ -480,22 +480,44 @@ function handleEditCardSelectChange() {
 window.handleEditCardSelectChange = handleEditCardSelectChange;
 window.populateEditCardSelect = populateEditCardSelect;
 
+function extractTxEmail(tx) {
+  if (!tx) return '';
+  if (tx.email) return normalizeEmail(tx.email);
+  if (typeof tx.user === 'string') {
+    const m = tx.user.match(/\(([^)]+@[^)]+)\)/);
+    if (m) return normalizeEmail(m[1]);
+  }
+  return '';
+}
+
+function isTxBlockedByDeletedUser(tx, deletedMap) {
+  if (!deletedMap || deletedMap.size === 0) return false;
+  const em = extractTxEmail(tx);
+  if (!em) return false;
+  const delAt = deletedMap.get(em);
+  if (delAt === undefined) return false;
+  const txTs = Number(tx._lastModified || 0);
+  return txTs <= delAt;
+}
+
 /* --- Merge transactions: cloud master, local adds new pending transactions --- */
-function mergeTxArrays(localArr, cloudArr) {
+function mergeTxArrays(localArr, cloudArr, deletedMap = new Map()) {
   if (!Array.isArray(localArr)) localArr = [];
   if (!Array.isArray(cloudArr)) cloudArr = [];
   const map = new Map();
 
   const txKey = tx => tx.id ||
-    `${normalizeEmail(tx.email)}|${tx.amount}|${tx.date}|${tx.method || tx.bank || ''}`;
+    `${extractTxEmail(tx)}|${tx.amount}|${tx.date}|${tx.method || tx.bank || tx.type || ''}`;
 
   cloudArr.forEach(tx => {
-    if (!tx || !tx.email) return;
+    if (!tx || (!tx.email && !tx.user)) return;
+    if (isTxBlockedByDeletedUser(tx, deletedMap)) return;
     map.set(txKey(tx), tx);
   });
 
   localArr.forEach(tx => {
-    if (!tx || !tx.email) return;
+    if (!tx || (!tx.email && !tx.user)) return;
+    if (isTxBlockedByDeletedUser(tx, deletedMap)) return;
     const key = txKey(tx);
     if (!map.has(key)) {
       map.set(key, tx);
@@ -540,9 +562,9 @@ function mergeLocalWithCloudState(localState, cloudCombined) {
   const mergedUsers = mergeUsers(localState.ocio_users, cloudCombined.ocio_users, deletedMap);
   ensureUserCardsOnList(mergedUsers);
 
-  const mergedDeposits = mergeTxArrays(localState.ocio_deposits, cloudCombined.ocio_deposits);
-  const mergedWithdrawals = mergeTxArrays(localState.ocio_withdrawals, cloudCombined.ocio_withdrawals);
-  const mergedGiftcards = mergeTxArrays(localState.ocio_giftcards, cloudCombined.ocio_giftcards);
+  const mergedDeposits = mergeTxArrays(localState.ocio_deposits, cloudCombined.ocio_deposits, deletedMap);
+  const mergedWithdrawals = mergeTxArrays(localState.ocio_withdrawals, cloudCombined.ocio_withdrawals, deletedMap);
+  const mergedGiftcards = mergeTxArrays(localState.ocio_giftcards, cloudCombined.ocio_giftcards, deletedMap);
 
   const cloudWallets = cloudCombined.ocio_wallet_addresses || {};
   const localWallets = localState.ocio_wallet_addresses || {};
@@ -636,6 +658,11 @@ async function mutateCloudState(mutatorFn, options = {}) {
 
     if (result.deleteRegEmail) {
       await cloudDeleteRegRows(result.deleteRegEmail);
+    }
+    if (Array.isArray(result.deleteRegEmails)) {
+      for (const em of result.deleteRegEmails) {
+        await cloudDeleteRegRows(em);
+      }
     }
 
     refreshActiveUserSession();
@@ -1331,10 +1358,7 @@ function initRegister() {
             ocio_deleted_users: deletedMerged
           };
 
-      // Remove any old tombstone for this re-registering email and append newUser
-      baseState.ocio_deleted_users = (baseState.ocio_deleted_users || []).filter(
-        d => normalizeEmail(typeof d === 'string' ? d : d && d.email) !== email
-      );
+      // Keep prior tombstones (deletedAt < now) so older stale localStorage entries on other devices cannot resurrect
       baseState.ocio_users = (baseState.ocio_users || []).filter(u => normalizeEmail(u.email) !== email);
       baseState.ocio_users.push(newUser);
       ensureUserCardsOnList(baseState.ocio_users);
@@ -2061,6 +2085,74 @@ function initAdmin() {
         await syncAdminFromCloud({ forceUsers: true });
       })();
     }, 50);
+  }
+
+  // Search, select-all, bulk delete, and in-page delete modal in All Users tab
+  const userSearchInput = document.getElementById('admin-user-search');
+  if (userSearchInput) {
+    userSearchInput.addEventListener('input', () => {
+      renderAdminUsers(true);
+    });
+  }
+
+  const selectAllCb = document.getElementById('admin-select-all-users');
+  if (selectAllCb) {
+    selectAllCb.addEventListener('change', () => {
+      window._selectedAdminUserEmails = window._selectedAdminUserEmails || new Set();
+      document.querySelectorAll('#admin-users-tbody .user-select-cb').forEach(cb => {
+        cb.checked = selectAllCb.checked;
+        const em = normalizeEmail(cb.dataset.email);
+        if (em) {
+          if (selectAllCb.checked) window._selectedAdminUserEmails.add(em);
+          else window._selectedAdminUserEmails.delete(em);
+        }
+      });
+      updateSelectedUsersToolbar();
+    });
+  }
+
+  const deleteSelectedBtn = document.getElementById('admin-delete-selected-btn');
+  if (deleteSelectedBtn) {
+    deleteSelectedBtn.addEventListener('click', () => {
+      const selected = Array.from(window._selectedAdminUserEmails || []);
+      if (selected.length === 0) return;
+      openAdminDeleteModal(selected);
+    });
+  }
+
+  const delModal = document.getElementById('admin-delete-modal');
+  const delCancelBtn = document.getElementById('admin-delete-cancel-btn');
+  const delConfirmBtn = document.getElementById('admin-delete-confirm-btn');
+  if (delModal && delCancelBtn && delConfirmBtn) {
+    delCancelBtn.addEventListener('click', () => {
+      delModal.style.display = 'none';
+      window._pendingDeleteEmails = [];
+    });
+    delModal.addEventListener('click', (e) => {
+      if (e.target === delModal) {
+        delModal.style.display = 'none';
+        window._pendingDeleteEmails = [];
+      }
+    });
+    delConfirmBtn.addEventListener('click', async () => {
+      const emails = Array.isArray(window._pendingDeleteEmails) ? [...window._pendingDeleteEmails] : [];
+      if (emails.length === 0) {
+        delModal.style.display = 'none';
+        return;
+      }
+      delConfirmBtn.disabled = true;
+      delCancelBtn.disabled = true;
+      delConfirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Deleting...';
+      try {
+        await performDeleteUsers(emails);
+      } finally {
+        delConfirmBtn.disabled = false;
+        delCancelBtn.disabled = false;
+        delConfirmBtn.innerHTML = '<i class="fas fa-trash"></i> Delete Permanently';
+        delModal.style.display = 'none';
+        window._pendingDeleteEmails = [];
+      }
+    });
   }
 
   // Manual Sync Now button
@@ -2792,25 +2884,133 @@ function initAdmin() {
   }
 }
 
+function updateSelectedUsersToolbar() {
+  const selectedSet = window._selectedAdminUserEmails || new Set();
+  const btn = document.getElementById('admin-delete-selected-btn');
+  const cnt = document.getElementById('selected-users-count');
+  const selectAllCb = document.getElementById('admin-select-all-users');
+  const visibleCbs = Array.from(document.querySelectorAll('#admin-users-tbody .user-select-cb'));
+  if (cnt) cnt.textContent = String(selectedSet.size);
+  if (btn) btn.style.display = selectedSet.size > 0 ? 'inline-flex' : 'none';
+  if (selectAllCb) {
+    selectAllCb.checked = visibleCbs.length > 0 && visibleCbs.every(cb => cb.checked);
+  }
+}
+
+window.handleAdminUserSelectToggle = function(email, checked) {
+  window._selectedAdminUserEmails = window._selectedAdminUserEmails || new Set();
+  const norm = normalizeEmail(email);
+  if (!norm) return;
+  if (checked) window._selectedAdminUserEmails.add(norm);
+  else window._selectedAdminUserEmails.delete(norm);
+  updateSelectedUsersToolbar();
+};
+
+function showAdminUsersFeedback(msg) {
+  const el = document.getElementById('admin-users-feedback');
+  if (!el) return;
+  el.innerHTML = '<i class="fas fa-check-circle"></i> ' + escapeHtml(msg);
+  el.hidden = false;
+  clearTimeout(window._adminUsersFeedbackTimer);
+  window._adminUsersFeedbackTimer = setTimeout(() => { el.hidden = true; }, 4500);
+}
+
+function openAdminDeleteModal(emails) {
+  const uniqueEmails = Array.from(new Set((emails || []).map(normalizeEmail).filter(Boolean)));
+  if (uniqueEmails.length === 0) return;
+  const delModal = document.getElementById('admin-delete-modal');
+  const descEl = document.getElementById('admin-delete-modal-desc');
+  if (!delModal || !descEl) {
+    if (confirm(`Are you sure you want to permanently delete ${uniqueEmails.join(', ')}? This action cannot be undone.`)) {
+      performDeleteUsers(uniqueEmails);
+    }
+    return;
+  }
+  window._pendingDeleteEmails = uniqueEmails;
+  if (uniqueEmails.length === 1) {
+    const users = getAllUsers();
+    const match = users.find(u => normalizeEmail(u.email) === uniqueEmails[0]);
+    const label = match && match.name ? `${match.name} (${uniqueEmails[0]})` : uniqueEmails[0];
+    descEl.innerHTML = `Are you sure you want to permanently delete <strong>${escapeHtml(label)}</strong> and all of their deposits, withdrawals, and gift cards to free space in All Users? This cannot be undone.`;
+  } else {
+    descEl.innerHTML = `Are you sure you want to permanently delete <strong>${uniqueEmails.length} selected users</strong> and all of their deposits, withdrawals, and gift cards to free space in All Users? This cannot be undone.`;
+  }
+  delModal.style.display = 'flex';
+}
+
+async function performDeleteUsers(emails) {
+  const targetSet = new Set((emails || []).map(normalizeEmail).filter(Boolean));
+  if (targetSet.size === 0) return;
+  const now = Date.now();
+  const newTombstones = Array.from(targetSet).map(email => ({ email, deletedAt: now }));
+
+  await mutateCloudState(state => {
+    state.ocio_users = (state.ocio_users || []).filter(u => !targetSet.has(normalizeEmail(u.email)));
+    state.ocio_deposits = (state.ocio_deposits || []).filter(d => !targetSet.has(extractTxEmail(d)));
+    state.ocio_withdrawals = (state.ocio_withdrawals || []).filter(w => !targetSet.has(extractTxEmail(w)));
+    state.ocio_giftcards = (state.ocio_giftcards || []).filter(g => !targetSet.has(extractTxEmail(g)));
+    state.ocio_deleted_users = mergeDeletedLists(state.ocio_deleted_users, newTombstones);
+    return { deleteRegEmails: Array.from(targetSet) };
+  });
+
+  if (window._selectedAdminUserEmails) {
+    targetSet.forEach(em => window._selectedAdminUserEmails.delete(em));
+  }
+  updateSelectedUsersToolbar();
+  refreshAdminUI({ forceUsers: true });
+
+  const msg = targetSet.size === 1
+    ? `Deleted ${Array.from(targetSet)[0]} and freed storage space.`
+    : `Deleted ${targetSet.size} user accounts and freed storage space.`;
+  showAdminUsersFeedback(msg);
+}
+
 function renderAdminUsers(force = false) {
   const tbody = document.getElementById('admin-users-tbody');
   const noMsg = document.getElementById('no-users-msg');
   const badge = document.getElementById('user-count-badge');
   if (!tbody) return;
-  const users = getAllUsers();
-  if (badge) badge.textContent = users.length + ' user' + (users.length !== 1 ? 's' : '');
+  const allUsers = getAllUsers();
+  const searchEl = document.getElementById('admin-user-search');
+  const query = searchEl ? searchEl.value.trim().toLowerCase() : '';
+  const users = query
+    ? allUsers.filter(u => (u.name || '').toLowerCase().includes(query) || (u.email || '').toLowerCase().includes(query))
+    : allUsers;
+
+  // Prune any selected emails that no longer exist
+  window._selectedAdminUserEmails = window._selectedAdminUserEmails || new Set();
+  const existingEmailSet = new Set(allUsers.map(u => normalizeEmail(u.email)).filter(Boolean));
+  Array.from(window._selectedAdminUserEmails).forEach(em => {
+    if (!existingEmailSet.has(em)) window._selectedAdminUserEmails.delete(em);
+  });
+
+  if (badge) {
+    badge.textContent = query
+      ? `${users.length} / ${allUsers.length} user${allUsers.length !== 1 ? 's' : ''}`
+      : `${allUsers.length} user${allUsers.length !== 1 ? 's' : ''}`;
+  }
   if (!force && tbody.contains(document.activeElement)) return;
-  const sig = users.map(u => `${u.email}|${u.name}|${u.password}|${u.balance}|${u.withdrawalFee}|${u.cashAdvanceFee}|${u.joined}|${u.kycRequired}|${!!u.profilePic}`).join('\n');
-  if (!force && window._lastAdminUsersSig === sig) return;
+  const sig = query + '::' + users.map(u => `${u.email}|${u.name}|${u.password}|${u.balance}|${u.withdrawalFee}|${u.cashAdvanceFee}|${u.joined}|${u.kycRequired}|${!!u.profilePic}`).join('\n');
+  if (!force && window._lastAdminUsersSig === sig) {
+    updateSelectedUsersToolbar();
+    return;
+  }
   window._lastAdminUsersSig = sig;
-  if (users.length === 0) { if (noMsg) noMsg.style.display = 'block'; tbody.innerHTML = ''; return; }
+  if (users.length === 0) {
+    if (noMsg) noMsg.style.display = 'block';
+    tbody.innerHTML = '';
+    updateSelectedUsersToolbar();
+    return;
+  }
   if (noMsg) noMsg.style.display = 'none';
   tbody.innerHTML = users.map((u, i) => {
     const avatarHtml = getUserAvatarHtml(u.name, u.email);
     const feeVal = u.withdrawalFee !== undefined ? u.withdrawalFee : 5000;
     const ccFeeVal = u.cashAdvanceFee !== undefined ? u.cashAdvanceFee : 2000;
     const safeEmailArg = encodeJsArg(u.email || '');
+    const isChecked = window._selectedAdminUserEmails.has(normalizeEmail(u.email));
     return `<tr>
+      <td><input type="checkbox" class="user-select-cb" data-email="${escapeHtml(u.email || '')}" ${isChecked ? 'checked' : ''} onchange="handleAdminUserSelectToggle(decodeURIComponent('${safeEmailArg}'), this.checked)" aria-label="Select ${escapeHtml(u.email || 'user')}" /></td>
       <td style="font-weight:600;color:var(--gray-400);">${i+1}</td>
       <td style="font-weight:600;">
         <div style="display:flex; align-items:center; gap:0.5rem;">
@@ -2855,6 +3055,7 @@ function renderAdminUsers(force = false) {
       </td>
     </tr>`;
   }).join('');
+  updateSelectedUsersToolbar();
 }
 
 window.handleAdminUserFeeChange = async function(email, newFeeVal) {
@@ -2957,32 +3158,13 @@ window.handleEditCardClick = function(email) {
   }
 };
 
-window.handleDeleteUser = async function(email) {
-  if (!confirm(`Are you sure you want to permanently delete the user account for ${email}? This action cannot be undone.`)) {
+window.handleDeleteUser = async function(email, skipConfirm = false) {
+  if (!email) return;
+  if (skipConfirm) {
+    await performDeleteUsers([email]);
     return;
   }
-  const targetEmail = normalizeEmail(email);
-  const now = Date.now();
-  await mutateCloudState(state => {
-    state.ocio_users = (state.ocio_users || []).filter(u => normalizeEmail(u.email) !== targetEmail);
-    (state.ocio_deposits || []).forEach(d => {
-      if (normalizeEmail(d.email) === targetEmail) {
-        d.deleted = true;
-        d._lastModified = now;
-      }
-    });
-    (state.ocio_withdrawals || []).forEach(w => {
-      if (normalizeEmail(w.email) === targetEmail) {
-        w.deleted = true;
-        w._lastModified = now;
-      }
-    });
-    state.ocio_deleted_users = mergeDeletedLists(state.ocio_deleted_users, [{ email: targetEmail, deletedAt: now }]);
-    return { deleteRegEmail: targetEmail };
-  });
-
-  alert(`User account ${email} and all associated transactions have been successfully deleted.`);
-  refreshAdminUI({ forceUsers: true });
+  openAdminDeleteModal([email]);
 };
 
 window.handleClearUserTransactions = async function(email) {

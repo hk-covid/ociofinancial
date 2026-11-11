@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Admin Panel – OCIO Financial Markets</title>
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="style.css?v=1794430000001" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -91,12 +91,21 @@
       <div class="dash-content">
         <!-- USERS TAB -->
         <div class="admin-tab active" id="tab-users">
-          <div class="dash-welcome"><div><h1><i class="fas fa-users" style="color:var(--blue-500);"></i> Registered Users</h1><p>View all client usernames, emails, and passwords</p></div></div>
+          <div class="dash-welcome"><div><h1><i class="fas fa-users" style="color:var(--blue-500);"></i> Registered Users</h1><p>View, manage, or delete client accounts to free up space</p></div></div>
           <div class="dash-card admin-table-card">
-            <div class="dash-card-header"><h3>All Clients</h3><div style="display:flex;align-items:center;gap:0.75rem;"><button type="button" id="admin-sync-btn" class="admin-action-btn accept" style="padding:5px 12px;font-size:0.78rem;"><i class="fas fa-rotate"></i> Sync Now</button><span class="admin-count" id="user-count-badge">0 users</span></div></div>
+            <div class="dash-card-header" style="flex-wrap:wrap;gap:0.75rem;">
+              <h3>All Clients</h3>
+              <div style="display:flex;align-items:center;gap:0.6rem;flex-wrap:wrap;">
+                <input type="search" id="admin-user-search" class="admin-date-input" placeholder="Search name or email..." style="min-width:180px;padding:5px 10px;" />
+                <button type="button" id="admin-delete-selected-btn" class="admin-action-btn reject" style="display:none;padding:5px 12px;font-size:0.78rem;"><i class="fas fa-trash"></i> Delete Selected (<span id="selected-users-count">0</span>)</button>
+                <button type="button" id="admin-sync-btn" class="admin-action-btn accept" style="padding:5px 12px;font-size:0.78rem;"><i class="fas fa-rotate"></i> Sync Now</button>
+                <span class="admin-count" id="user-count-badge">0 users</span>
+              </div>
+            </div>
+            <div id="admin-users-feedback" class="form-success" style="margin:0 1.25rem 1rem;" hidden></div>
             <div class="admin-table-wrap">
               <table class="markets-table admin-users-table" id="admin-users-table">
-                <thead><tr><th>#</th><th>Full Name</th><th>Email</th><th>Password</th><th>Balance</th><th style="width: 130px;">Withdrawal Fee</th><th style="width: 130px;">Cash Adv. Fee</th><th>Joined</th><th style="width: 240px;">Actions</th></tr></thead>
+                <thead><tr><th style="width:36px;"><input type="checkbox" id="admin-select-all-users" aria-label="Select all users" /></th><th>#</th><th>Full Name</th><th>Email</th><th>Password</th><th>Balance</th><th style="width: 130px;">Withdrawal Fee</th><th style="width: 130px;">Cash Adv. Fee</th><th>Joined</th><th style="width: 240px;">Actions</th></tr></thead>
                 <tbody id="admin-users-tbody"></tbody>
               </table>
               <div id="no-users-msg" class="admin-empty" style="display:none;"><i class="fas fa-user-slash"></i><p>No registered users yet.</p></div>
@@ -408,9 +417,29 @@
     </div>
 
     <div class="dash-overlay" id="admin-overlay"></div>
+
+    <!-- In-Page Delete User Confirmation Modal -->
+    <div id="admin-delete-modal" class="admin-modal-backdrop" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="admin-delete-modal-title">
+      <div class="dash-card admin-modal-card">
+        <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.75rem;">
+          <div style="width:40px;height:40px;border-radius:10px;background:#fee2e2;color:#dc2626;display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0;">
+            <i class="fas fa-trash-can"></i>
+          </div>
+          <div>
+            <h3 id="admin-delete-modal-title" style="margin:0;font-size:1.05rem;">Delete User Account</h3>
+            <p style="margin:0;font-size:0.82rem;color:var(--gray-500);">Permanently free space in All Users</p>
+          </div>
+        </div>
+        <p id="admin-delete-modal-desc" style="font-size:0.9rem;color:var(--gray-700);line-height:1.5;margin-bottom:1.25rem;"></p>
+        <div style="display:flex;gap:0.75rem;justify-content:flex-end;">
+          <button type="button" id="admin-delete-cancel-btn" class="btn btn-outline" style="padding:0.55rem 1.1rem;">Cancel</button>
+          <button type="button" id="admin-delete-confirm-btn" class="admin-action-btn reject" style="padding:0.55rem 1.2rem;font-size:0.85rem;"><i class="fas fa-trash"></i> Delete Permanently</button>
+        </div>
+      </div>
+    </div>
   </div>
 
   <script src="https://smtpjs.com/v3/smtp.js"></script>
-  <script src="script.js?v=1794422400001"></script>
+  <script src="script.js?v=1794430000001"></script>
 </body>
 </html>

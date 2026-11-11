@@ -1824,3 +1824,39 @@ main {
 .dash-view {
   animation: fadeInTab .3s ease;
 }
+.admin-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(4px);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+.admin-modal-card {
+  width: 100%;
+  max-width: 440px;
+  background: var(--white, #fff);
+  box-shadow: 0 24px 48px rgba(15, 23, 42, 0.25);
+}
+.admin-users-table input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: var(--blue-600, #2563eb);
+}
+@media (min-width: 769px) {
+  .admin-users-table th:last-child,
+  .admin-users-table td:last-child {
+    position: sticky;
+    right: 0;
+    background: var(--white, #fff);
+    box-shadow: -4px 0 10px rgba(15, 23, 42, 0.05);
+    z-index: 2;
+  }
+  .admin-users-table tbody tr:hover td:last-child {
+    background: var(--blue-50, #eff6ff);
+  }
+}
