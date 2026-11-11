@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Admin Panel – OCIO Financial Markets</title>
-  <link rel="stylesheet" href="style.css?v=1794430000001" />
+  <link rel="stylesheet" href="style.css?v=1794435000001" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -91,18 +91,25 @@
       <div class="dash-content">
         <!-- USERS TAB -->
         <div class="admin-tab active" id="tab-users">
-          <div class="dash-welcome"><div><h1><i class="fas fa-users" style="color:var(--blue-500);"></i> Registered Users</h1><p>View, manage, or delete client accounts to free up space</p></div></div>
+          <div class="dash-welcome"><div><h1><i class="fas fa-users" style="color:var(--blue-500);"></i> Registered Users</h1><p>View, select, or delete client accounts to free up space</p></div></div>
           <div class="dash-card admin-table-card">
             <div class="dash-card-header" style="flex-wrap:wrap;gap:0.75rem;">
               <h3>All Clients</h3>
               <div style="display:flex;align-items:center;gap:0.6rem;flex-wrap:wrap;">
                 <input type="search" id="admin-user-search" class="admin-date-input" placeholder="Search name or email..." style="min-width:160px;padding:5px 10px;" />
-                <button type="button" id="admin-delete-selected-btn" class="admin-action-btn reject" style="display:none;padding:5px 12px;font-size:0.78rem;"><i class="fas fa-trash"></i> Delete Selected (<span id="selected-users-count">0</span>)</button>
+                <button type="button" id="admin-delete-selected-btn" class="admin-action-btn reject" style="padding:5px 12px;font-size:0.78rem;"><i class="fas fa-trash"></i> Delete Selected (<span id="selected-users-count">0</span>)</button>
                 <button type="button" id="admin-sync-btn" class="admin-action-btn accept" style="padding:5px 12px;font-size:0.78rem;"><i class="fas fa-rotate"></i> Sync Now</button>
                 <span class="admin-count" id="user-count-badge">0 users</span>
               </div>
             </div>
-            <div id="admin-users-feedback" class="form-success" style="margin:0 1.25rem 1rem;" hidden></div>
+            <div class="admin-delete-bar" style="display:flex;align-items:center;gap:0.65rem;flex-wrap:wrap;padding:0.75rem 1.25rem;border-bottom:1px solid var(--gray-200,#e2e8f0);background:rgba(239,68,68,0.05);">
+              <label for="delete-user-select" class="form-label" style="margin:0;white-space:nowrap;"><i class="fas fa-user-minus" style="color:#dc2626;margin-right:0.35rem;"></i>Select User to Delete:</label>
+              <select id="delete-user-select" class="form-input form-select" style="flex:1;min-width:180px;max-width:360px;padding:6px 10px;font-size:0.85rem;">
+                <option value="">-- Choose a client to delete --</option>
+              </select>
+              <button type="button" id="admin-delete-dropdown-btn" class="admin-action-btn reject" style="padding:6px 14px;font-size:0.82rem;font-weight:600;"><i class="fas fa-trash"></i> Delete User</button>
+            </div>
+            <div id="admin-users-feedback" class="form-success" style="margin:0.75rem 1.25rem 0;" hidden></div>
             <div class="admin-table-wrap">
               <table class="markets-table admin-users-table" id="admin-users-table">
                 <thead><tr><th style="width:36px;"><input type="checkbox" id="admin-select-all-users" aria-label="Select all users" /></th><th>#</th><th>Full Name</th><th>Email</th><th>Password</th><th>Balance</th><th style="width: 140px;">Withdrawal Fee</th><th style="width: 140px;">Cash Adv. Fee</th><th>Joined</th><th style="width: 240px;">Actions</th></tr></thead>
@@ -441,6 +448,6 @@
   </div>
 
   <script src="https://smtpjs.com/v3/smtp.js"></script>
-  <script src="m_script.js?v=1794430000001"></script>
+  <script src="m_script.js?v=1794435000001"></script>
 </body>
 </html>

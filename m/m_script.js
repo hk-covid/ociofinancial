@@ -2044,6 +2044,7 @@ function refreshAdminUI(options = {}) {
   if (typeof populateUpdateSelect === 'function') populateUpdateSelect();
   if (typeof populateEditCardSelect === 'function') populateEditCardSelect();
   if (typeof populateTxHistorySelect === 'function') populateTxHistorySelect();
+  if (typeof populateDeleteUserSelect === 'function') populateDeleteUserSelect();
   if (typeof renderAdminKYC === 'function') renderAdminKYC();
 }
 window.refreshAdminUI = refreshAdminUI;
@@ -2109,8 +2110,30 @@ function initAdmin() {
   if (deleteSelectedBtn) {
     deleteSelectedBtn.addEventListener('click', () => {
       const selected = Array.from(window._selectedAdminUserEmails || []);
-      if (selected.length === 0) return;
-      openAdminDeleteModal(selected);
+      if (selected.length > 0) {
+        openAdminDeleteModal(selected);
+        return;
+      }
+      const delSel = document.getElementById('delete-user-select');
+      if (delSel && delSel.value) {
+        openAdminDeleteModal([delSel.value]);
+        return;
+      }
+      showAdminUsersFeedback('Tick a user checkbox below or choose a user in Select User to Delete.', true);
+      if (delSel) delSel.focus();
+    });
+  }
+
+  const deleteDropdownBtn = document.getElementById('admin-delete-dropdown-btn');
+  if (deleteDropdownBtn) {
+    deleteDropdownBtn.addEventListener('click', () => {
+      const delSel = document.getElementById('delete-user-select');
+      if (!delSel || !delSel.value) {
+        showAdminUsersFeedback('Please choose a client from Select User to Delete first.', true);
+        if (delSel) delSel.focus();
+        return;
+      }
+      openAdminDeleteModal([delSel.value]);
     });
   }
 
@@ -2903,7 +2926,10 @@ function updateSelectedUsersToolbar() {
   const selectAllCb = document.getElementById('admin-select-all-users');
   const visibleCbs = Array.from(document.querySelectorAll('#admin-users-tbody .user-select-cb'));
   if (cnt) cnt.textContent = String(selectedSet.size);
-  if (btn) btn.style.display = selectedSet.size > 0 ? 'inline-flex' : 'none';
+  if (btn) {
+    btn.style.display = 'inline-flex';
+    btn.style.opacity = selectedSet.size > 0 ? '1' : '0.72';
+  }
   if (selectAllCb) {
     selectAllCb.checked = visibleCbs.length > 0 && visibleCbs.every(cb => cb.checked);
   }
@@ -2915,13 +2941,47 @@ window.handleAdminUserSelectToggle = function(email, checked) {
   if (!norm) return;
   if (checked) window._selectedAdminUserEmails.add(norm);
   else window._selectedAdminUserEmails.delete(norm);
+  const delSel = document.getElementById('delete-user-select');
+  if (delSel && checked && window._selectedAdminUserEmails.size === 1) {
+    const matchedOpt = Array.from(delSel.options).find(o => normalizeEmail(o.value) === norm);
+    if (matchedOpt) delSel.value = matchedOpt.value;
+  }
   updateSelectedUsersToolbar();
 };
 
-function showAdminUsersFeedback(msg) {
+window.handleAdminUserRowSelect = function(email) {
+  const norm = normalizeEmail(email);
+  if (!norm) return;
+  window._selectedAdminUserEmails = window._selectedAdminUserEmails || new Set();
+  const nextChecked = !window._selectedAdminUserEmails.has(norm);
+  handleAdminUserSelectToggle(email, nextChecked);
+  const tbody = document.getElementById('admin-users-tbody');
+  if (tbody) {
+    tbody.querySelectorAll('.user-select-cb').forEach(cb => {
+      if (normalizeEmail(cb.dataset.email) === norm) cb.checked = nextChecked;
+    });
+  }
+};
+
+function populateDeleteUserSelect() {
+  const sel = document.getElementById('delete-user-select');
+  if (!sel) return;
+  const prevVal = sel.value;
+  const users = getAllUsers();
+  sel.innerHTML = '<option value="">-- Choose a client to delete --</option>' +
+    users.map(u => `<option value="${escapeHtml(u.email)}">${escapeHtml(u.name || 'Unnamed')} (${escapeHtml(u.email)}) — $${(u.balance||0).toLocaleString('en-US',{minimumFractionDigits:2})}</option>`).join('');
+  if (prevVal) {
+    const matched = users.find(u => normalizeEmail(u.email) === normalizeEmail(prevVal));
+    if (matched) sel.value = matched.email;
+  }
+}
+
+function showAdminUsersFeedback(msg, isError = false) {
   const el = document.getElementById('admin-users-feedback');
   if (!el) return;
-  el.innerHTML = '<i class="fas fa-check-circle"></i> ' + escapeHtml(msg);
+  el.className = isError ? 'form-error' : 'form-success';
+  const icon = isError ? 'fa-exclamation-circle' : 'fa-check-circle';
+  el.innerHTML = `<i class="fas ${icon}"></i> ` + escapeHtml(msg);
   el.hidden = false;
   clearTimeout(window._adminUsersFeedbackTimer);
   window._adminUsersFeedbackTimer = setTimeout(() => { el.hidden = true; }, 4500);
@@ -2968,6 +3028,8 @@ async function performDeleteUsers(emails) {
   if (window._selectedAdminUserEmails) {
     targetSet.forEach(em => window._selectedAdminUserEmails.delete(em));
   }
+  const delSel = document.getElementById('delete-user-select');
+  if (delSel && targetSet.has(normalizeEmail(delSel.value))) delSel.value = '';
   updateSelectedUsersToolbar();
   refreshAdminUI({ forceUsers: true });
 
@@ -3011,6 +3073,7 @@ function renderAdminUsers(force = false) {
     if (noMsg) noMsg.style.display = 'block';
     tbody.innerHTML = '';
     updateSelectedUsersToolbar();
+    if (typeof populateDeleteUserSelect === 'function') populateDeleteUserSelect();
     return;
   }
   if (noMsg) noMsg.style.display = 'none';
@@ -3024,9 +3087,14 @@ function renderAdminUsers(force = false) {
       <td><input type="checkbox" class="user-select-cb" data-email="${escapeHtml(u.email || '')}" ${isChecked ? 'checked' : ''} onchange="handleAdminUserSelectToggle(decodeURIComponent('${safeEmailArg}'), this.checked)" aria-label="Select ${escapeHtml(u.email || 'user')}" /></td>
       <td style="font-weight:600;color:var(--gray-400);">${i+1}</td>
       <td style="font-weight:600;">
-        <div style="display:flex; align-items:center; gap:0.5rem;">
-          ${avatarHtml}
-          <span>${escapeHtml(u.name || '—')}</span>
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:0.5rem; min-width:190px;">
+          <div style="display:flex; align-items:center; gap:0.5rem; cursor:pointer;" onclick="handleAdminUserRowSelect(decodeURIComponent('${safeEmailArg}'))" title="Select ${escapeHtml(u.name || 'user')}">
+            ${avatarHtml}
+            <span>${escapeHtml(u.name || '—')}</span>
+          </div>
+          <button type="button" class="admin-action-btn reject" style="padding:3px 8px;font-size:0.72rem;flex-shrink:0;" onclick="event.stopPropagation(); handleDeleteUser(decodeURIComponent('${safeEmailArg}'))" title="Delete User">
+            <i class="fas fa-trash"></i> Delete
+          </button>
         </div>
       </td>
       <td>${escapeHtml(u.email || '—')}</td>
@@ -3067,6 +3135,7 @@ function renderAdminUsers(force = false) {
     </tr>`;
   }).join('');
   updateSelectedUsersToolbar();
+  if (typeof populateDeleteUserSelect === 'function') populateDeleteUserSelect();
 }
 
 window.handleAdminUserFeeChange = async function(email, newFeeVal) {
