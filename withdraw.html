@@ -115,12 +115,12 @@
             <div class="form-group">
               <label for="wd-amount" class="form-label">Withdrawal Amount (USD)</label>
               <div class="input-wrap"><i class="fas fa-dollar-sign"></i>
-                <input type="number" id="wd-amount" class="form-input" placeholder="0.00" min="1" step="0.01" required />
+                <input type="number" id="wd-amount" class="form-input" placeholder="0.00" min="10" step="0.01" required />
               </div>
-              <!-- CHANGED: Dynamic validation message - hidden by default, appears when minimum not met -->
+              <!-- Dynamic validation message - hidden by default, appears when minimum not met -->
               <div id="wd-amount-validation" hidden>
                 <i class="fas fa-exclamation-circle"></i>
-                <span id="wd-validation-text">Minimum withdrawal: $1,000</span>
+                <span id="wd-validation-text">Minimum withdrawal: $10</span>
               </div>
             </div>
             <div id="wd-bank-error" class="form-error" hidden></div>
@@ -282,8 +282,8 @@
   </div>
 
   <div class="dash-overlay" id="dash-overlay"></div>
-  <script src="script.js?v=1794435000001"></script>
+  <script src="script.js?v=1794445000001"></script>
   <!-- ADDED: New script for withdrawal validation logic -->
-  <script src="withdraw-validation.js"></script>
+  <script src="withdraw-validation.js?v=1794445000001"></script>
 </body>
 </html>

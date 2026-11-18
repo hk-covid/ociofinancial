@@ -14,7 +14,7 @@
 
 // ===== CONFIG =====
 // Default minimum if admin hasn't set one yet
-const DEFAULT_MIN_WITHDRAWAL = 1000;
+const DEFAULT_MIN_WITHDRAWAL = 10;
 
 // Storage key for admin-configured minimum withdrawal amount
 const ADMIN_MIN_WITHDRAWAL_KEY = 'admin_min_withdrawal_amount';
@@ -32,6 +32,10 @@ function getMinimumWithdrawal() {
   try {
     const stored = localStorage.getItem(ADMIN_MIN_WITHDRAWAL_KEY);
     if (stored) {
+      if (stored === '1000') {
+        localStorage.removeItem(ADMIN_MIN_WITHDRAWAL_KEY);
+        return DEFAULT_MIN_WITHDRAWAL;
+      }
       const value = parseFloat(stored);
       if (!isNaN(value) && value > 0) {
         return value;
@@ -71,9 +75,12 @@ function setMinimumWithdrawal(newMinimum) {
  * Format a number as USD currency
  * 
  * @param {number} amount - The amount to format
- * @returns {string} Formatted currency string (e.g., "$1,000.00")
+ * @returns {string} Formatted currency string (e.g., "$10")
  */
 function formatCurrency(amount) {
+  if (amount % 1 === 0) {
+    return '$' + amount.toLocaleString('en-US');
+  }
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'USD',

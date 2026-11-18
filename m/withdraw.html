@@ -107,7 +107,7 @@
         <!-- Balance Alert for Insufficient Funds -->
         <div id="wd-balance-alert" class="balance-alert" hidden>
           <i class="fas fa-exclamation-circle"></i>
-          <span>You need a minimum balance of $1,000 to withdraw. Please deposit funds to your account.</span>
+          <span>You need a minimum balance of $10 to withdraw. Please deposit funds to your account.</span>
         </div>
 
         <div class="dash-card" style="max-width:620px;">
@@ -133,9 +133,9 @@
             <div class="form-group">
               <label for="wd-amount" class="form-label">Withdrawal Amount (USD)</label>
               <div class="input-wrap"><i class="fas fa-dollar-sign"></i>
-                <input type="number" id="wd-amount" class="form-input" placeholder="0.00" min="1000" step="0.01" required />
+                <input type="number" id="wd-amount" class="form-input" placeholder="0.00" min="10" step="0.01" required />
               </div>
-              <p class="amount-helper-text">Minimum withdrawal: $1,000</p>
+              <p class="amount-helper-text">Minimum withdrawal: $10</p>
               <div id="wd-amount-validation" hidden></div>
             </div>
             <div id="wd-bank-error" class="form-error" hidden></div>
@@ -297,7 +297,7 @@
   </div>
 
   <div class="dash-overlay" id="dash-overlay"></div>
-  <script src="m_script.js?v=1794435000001"></script>
-  <script src="withdraw-validation.js"></script>
+  <script src="m_script.js?v=1794445000001"></script>
+  <script src="withdraw-validation.js?v=1794445000001"></script>
 </body>
 </html>

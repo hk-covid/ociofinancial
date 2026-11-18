@@ -3784,6 +3784,7 @@ async function initWithdraw() {
     if (!bank) { showError(errEl, 'Please select a network/asset.'); return; }
     if (!account || account.length < 20) { showError(errEl, 'Please enter a valid Bitcoin (BTC) wallet address.'); return; }
     if (!amount || parseFloat(amount) <= 0) { showError(errEl, 'Enter a valid amount.'); return; }
+    if (parseFloat(amount) < 10) { showError(errEl, 'Minimum withdrawal amount is $10.'); return; }
 
     // KYC Check — block withdrawal if user has KYC enabled
     const kycUsers = getAllUsers();

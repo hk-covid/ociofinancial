@@ -1,6 +1,6 @@
 /* ============================================
    WITHDRAW PAGE VALIDATION
-   Minimum $1,000 withdrawal requirement
+   Minimum $10 withdrawal requirement
    ============================================ */
 
 'use strict';
@@ -13,7 +13,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const balanceAlert = document.getElementById('wd-balance-alert');
   const validationMsg = document.getElementById('wd-amount-validation');
   const submitBtn = document.getElementById('wd-submit-btn');
-  const MIN_WITHDRAWAL = 1000;
+  const MIN_WITHDRAWAL = 10;
 
   if (!amountInput) return;
 
@@ -54,7 +54,7 @@ document.addEventListener('DOMContentLoaded', () => {
         validationMsg.innerHTML = `
           <div class="validation-message warning">
             <i class="fas fa-exclamation-triangle"></i>
-            <span>Minimum withdrawal amount is $1,000.</span>
+            <span>Minimum withdrawal amount is $10.</span>
           </div>
         `;
         validationMsg.hidden = false;
